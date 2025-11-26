@@ -8,6 +8,10 @@ let ready = false;
 let islands = [];
 let activeIsland = null;
 
+// receipt thumbnail size (grid)
+let thumbW = 120;
+let thumbH = 160;
+
 async function preloadJSON() {
   const response = await fetch("data/receipts.json?v=" + Date.now());
   const jsonData = await response.json();
@@ -41,6 +45,7 @@ function setup() {
   textAlign(CENTER, CENTER);
 
   setupIslands();
+  assignReceiptsToIslands();
 }
 
 function windowResized() {
@@ -49,7 +54,7 @@ function windowResized() {
 }
 
 // ------------------------------------------------------
-// 4개 섬 placeholder 설정 (웹 페이지 크기 변화 대응)
+// 4개 섬 placeholder 설정
 // ------------------------------------------------------
 function setupIslands() {
   islands = [];
@@ -64,7 +69,8 @@ function setupIslands() {
     x: margin,
     y: margin,
     w: w,
-    h: hSmall
+    h: hSmall,
+    receipts: []
   });
 
   islands.push({
@@ -72,7 +78,8 @@ function setupIslands() {
     x: width - w - margin,
     y: margin,
     w: w,
-    h: hBig
+    h: hBig,
+    receipts: []
   });
 
   islands.push({
@@ -80,7 +87,8 @@ function setupIslands() {
     x: margin,
     y: height - hSmall - margin,
     w: w * 0.5,
-    h: hSmall
+    h: hSmall,
+    receipts: []
   });
 
   islands.push({
@@ -88,17 +96,32 @@ function setupIslands() {
     x: width - w * 0.55 - margin,
     y: height - hSmall - margin,
     w: w * 0.55,
-    h: hSmall
+    h: hSmall,
+    receipts: []
   });
 }
 
+// ------------------------------------------------------
+// 테스트용: receipts를 랜덤 island에 분배
+// 나중에 실제 지역별로 매칭 가능
+// ------------------------------------------------------
+function assignReceiptsToIslands() {
+  for (let r of receiptsData) {
+    let idx = floor(random(islands.length));
+    islands[idx].receipts.push(r);
+  }
+}
+
+// ------------------------------------------------------
+// DRAW
+// ------------------------------------------------------
 function draw() {
   background(20);
 
   if (!ready) {
     fill(255);
     textSize(24);
-    text(`Loading images… ${imagesLoaded}/${totalImages}`, width/2, height/2);
+    text(`Loading images… ${imagesLoaded}/${totalImages}`, width / 2, height / 2);
     return;
   }
 
@@ -106,22 +129,21 @@ function draw() {
 
   if (activeIsland !== null) {
     drawActiveIslandHighlight();
+    drawReceiptsInIsland(activeIsland);
   }
 }
 
 // ------------------------------------------------------
-// 섬들 그리기
+// 섬 그리기
 // ------------------------------------------------------
 function drawIslands() {
   textSize(22);
   for (let island of islands) {
-    // 박스
     fill(40);
     stroke(120);
     strokeWeight(2);
     rect(island.x, island.y, island.w, island.h, 15);
 
-    // 텍스트
     fill(255);
     noStroke();
     text(island.name, island.x + island.w / 2, island.y + island.h / 2);
@@ -142,24 +164,22 @@ function drawActiveIslandHighlight() {
   fill(255);
   noStroke();
   textSize(18);
-  text("Selected → " + isl.name, width/2, 40);
+  text("Selected → " + isl.name, width / 2, 40);
 }
 
 // ------------------------------------------------------
-// 클릭 이벤트: 어떤 섬 눌렀는지 검사
+// Grid layout로 receipt 배치
 // ------------------------------------------------------
-function mousePressed() {
-  activeIsland = null;
+function drawReceiptsInIsland(island) {
+  let list = island.receipts;
+  if (list.length === 0) return;
 
-  for (let isl of islands) {
-    if (
-      mouseX > isl.x &&
-      mouseX < isl.x + isl.w &&
-      mouseY > isl.y &&
-      mouseY < isl.y + isl.h
-    ) {
-      activeIsland = isl;
-      break;
-    }
-  }
-}
+  let cols = floor(island.w / (thumbW + 10));
+  cols = max(cols, 1);
+
+  let rows = ceil(list.length / cols);
+
+  let totalW = cols * (thumbW + 10);
+  let totalH = rows * (thumbH + 10);
+
+  let startX = island.x + (island.w - to
