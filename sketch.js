@@ -115,6 +115,8 @@ function assignReceiptsToIslands() {
 // ------------------------------------------------------
 // DRAW
 // ------------------------------------------------------
+let assigned = false;
+
 function draw() {
   background(20);
 
@@ -123,6 +125,14 @@ function draw() {
     textSize(24);
     text(`Loading images… ${imagesLoaded}/${totalImages}`, width / 2, height / 2);
     return;
+  }
+
+  // ---------------------------
+  // 🔥 이미지 로딩 완료 후 한 번만 실행
+  // ---------------------------
+  if (!assigned) {
+    assignReceiptsToIslands();
+    assigned = true;
   }
 
   drawIslands();
