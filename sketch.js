@@ -3,7 +3,7 @@ let receiptImages = {};
 
 async function preloadJSON() {
   // JSON 불러오기 (GitHub 캐시 무효화 포함)
-  const response = await fetch("data/receipts02.json?v=" + Date.now());
+  const response = await fetch("data/receipts.json?v=" + Date.now());
   const jsonData = await response.json();
 
   // 혹시 Object 형태( {0: {...}, 1: {...}} )이면 배열로 변환
