@@ -191,33 +191,31 @@ function drawReceiptsInIsland(island) {
   let list = island.receipts;
   if (list.length === 0) return;
 
-  let cols = floor(island.w / (thumbW + 10));
-  cols = max(cols, 1);
+  let padding = 10;
 
-  let rows = ceil(list.length / cols);
+  let x = island.x + padding;
+  let y = island.y + padding;
 
-  let totalW = cols * (thumbW + 10);
-  let totalH = rows * (thumbH + 10);
+  let maxX = island.x + island.w - padding;
 
-  let startX = island.x + (island.w - totalW) / 2 + thumbW / 2;
-  let startY = island.y + (island.h - totalH) / 2 + thumbH / 2;
+  for (let r of list) {
+    let img = receiptImages[r.id];
+    if (!img) continue;
 
-  let i = 0;
+    let w = r.scaledW;
+    let h = r.scaledH;
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (i >= list.length) return;
-
-      let receipt = list[i];
-      let img = receiptImages[receipt.id];
-
-      let cx = startX + c * (thumbW + 10);
-      let cy = startY + r * (thumbH + 10);
-
-      if (img) image(img, cx, cy, thumbW, thumbH);
-
-      i++;
+    // 줄바꿈
+    if (x + w > maxX) {
+      x = island.x + padding;
+      y += h + padding;
     }
+
+    // 그림
+    image(img, x + w/2, y + h/2, w, h);
+
+    // 다음 위치로 이동
+    x += w + padding;
   }
 }
 
