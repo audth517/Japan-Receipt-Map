@@ -8,9 +8,7 @@ let ready = false;
 let islands = [];
 let activeIsland = null;
 
-// receipt thumbnail size (grid)
-let thumbW = 120;
-let thumbH = 160;
+let assigned = false;
 
 async function preloadJSON() {
   const response = await fetch("data/receipts.json?v=" + Date.now());
@@ -102,7 +100,6 @@ function setupIslands() {
 
 // ------------------------------------------------------
 // 테스트용: receipts를 랜덤 island에 분배
-// 나중에 실제 지역별로 매칭 가능
 // ------------------------------------------------------
 function assignReceiptsToIslands() {
   for (let r of receiptsData) {
@@ -114,8 +111,6 @@ function assignReceiptsToIslands() {
 // ------------------------------------------------------
 // DRAW
 // ------------------------------------------------------
-let assigned = false;
-
 function draw() {
   background(20);
 
@@ -126,25 +121,26 @@ function draw() {
     return;
   }
 
-  // 처음 ready 되는 순간 receipts 분배
+  // 처음 ready 되는 순간 receipts 분배 + 가격 기반 scaling
   if (!assigned) {
     assignReceiptsToIslands();
 
     for (let isl of islands) {
-      computeScalingForIsland(isl);
+      computeScalingForIsland(isl);     // K 계산
+      applyPriceScaling(isl);           // scaledW, scaledH 저장
     }
-    
+
     assigned = true;
   }
 
   drawIslands();
 
-  // 🔥 클릭 여부 상관없이 모든 섬에 영수증 표시
+  // 모든 섬에 자동으로 영수증 표시
   for (let isl of islands) {
     drawReceiptsInIsland(isl);
   }
 
-  // 선택된 섬 강조는 남겨도 되고 지워도 됨
+  // 클릭된 섬 강조 (옵션)
   if (activeIsland !== null) {
     drawActiveIslandHighlight();
   }
@@ -185,7 +181,7 @@ function drawActiveIslandHighlight() {
 }
 
 // ------------------------------------------------------
-// Grid layout로 receipt 배치
+// Flow layout로 receipt 배치 (가격 기반 크기 사용)
 // ------------------------------------------------------
 function drawReceiptsInIsland(island) {
   let list = island.receipts;
@@ -205,16 +201,15 @@ function drawReceiptsInIsland(island) {
     let w = r.scaledW;
     let h = r.scaledH;
 
-    // 줄바꿈
+    // 줄바꿈 처리
     if (x + w > maxX) {
       x = island.x + padding;
       y += h + padding;
     }
 
-    // 그림
+    // 이미지 그리기 (중심 정렬)
     image(img, x + w/2, y + h/2, w, h);
 
-    // 다음 위치로 이동
     x += w + padding;
   }
 }
@@ -239,39 +234,33 @@ function mousePressed() {
 }
 
 // ------------------------------------------------------
-// 가격 기반 스케일링 적용: island 내부에 들어갈 영수증 크기 계산
+// 가격 기반 스케일링 K 계산
 // ------------------------------------------------------
 function computeIslandScaling(island) {
   let list = island.receipts;
   if (list.length === 0) return;
 
-  // 1) price 합
   let sumPrice = 0;
   for (let r of list) sumPrice += r.price;
 
-  // 2) island 사용 가능 면적 (60% 정도만 사용)
-  let usableArea = island.w * island.h * 0.6;
+  let usableArea = island.w * island.h * 0.6;  // 60% 사용
 
-  // 3) 스케일링 패러미터 K
   let K = usableArea / sumPrice;
 
-  island.scaleK = K; // 기록 (디버깅용)
+  island.scaleK = K;
 }
 
 // ------------------------------------------------------
-// island.receipts 안에 scaledW, scaledH 계산하여 저장
+// scaledW, scaledH 적용
 // ------------------------------------------------------
 function applyPriceScaling(island) {
-
   if (!island.scaleK) return;
 
   for (let r of island.receipts) {
     let aspect = r.width / r.height;
 
-    // 목표 면적 = price * K
     let area = r.price * island.scaleK;
 
-    // 실제 w, h 계산
     let scaledH = Math.sqrt(area / aspect);
     let scaledW = scaledH * aspect;
 
@@ -281,8 +270,7 @@ function applyPriceScaling(island) {
 }
 
 // ------------------------------------------------------
-// island 하나에 대해 scaling 계산 전체 실행
-// (1) scaling factor 계산 → (2) 각 receipt 크기 적용
+// island scaling 전체 실행
 // ------------------------------------------------------
 function computeScalingForIsland(island) {
   computeIslandScaling(island);
