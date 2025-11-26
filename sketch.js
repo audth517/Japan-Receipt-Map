@@ -45,7 +45,6 @@ function setup() {
   textAlign(CENTER, CENTER);
 
   setupIslands();
-  assignReceiptsToIslands();
 }
 
 function windowResized() {
