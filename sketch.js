@@ -182,4 +182,43 @@ function drawReceiptsInIsland(island) {
   let totalW = cols * (thumbW + 10);
   let totalH = rows * (thumbH + 10);
 
-  let startX = island.x + (island.w - to
+  let startX = island.x + (island.w - totalW) / 2 + thumbW / 2;
+  let startY = island.y + (island.h - totalH) / 2 + thumbH / 2;
+
+  let i = 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (i >= list.length) return;
+
+      let receipt = list[i];
+      let img = receiptImages[receipt.id];
+
+      let cx = startX + c * (thumbW + 10);
+      let cy = startY + r * (thumbH + 10);
+
+      if (img) image(img, cx, cy, thumbW, thumbH);
+
+      i++;
+    }
+  }
+}
+
+// ------------------------------------------------------
+// 클릭 이벤트
+// ------------------------------------------------------
+function mousePressed() {
+  activeIsland = null;
+
+  for (let isl of islands) {
+    if (
+      mouseX > isl.x &&
+      mouseX < isl.x + isl.w &&
+      mouseY > isl.y &&
+      mouseY < isl.y + isl.h
+    ) {
+      activeIsland = isl;
+      break;
+    }
+  }
+}
