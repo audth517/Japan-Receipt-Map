@@ -127,9 +127,7 @@ function draw() {
     return;
   }
 
-  // ---------------------------
-  // 🔥 이미지 로딩 완료 후 한 번만 실행
-  // ---------------------------
+  // 처음 ready 되는 순간 receipts 분배
   if (!assigned) {
     assignReceiptsToIslands();
     assigned = true;
@@ -137,9 +135,14 @@ function draw() {
 
   drawIslands();
 
+  // 🔥 클릭 여부 상관없이 모든 섬에 영수증 표시
+  for (let isl of islands) {
+    drawReceiptsInIsland(isl);
+  }
+
+  // 선택된 섬 강조는 남겨도 되고 지워도 됨
   if (activeIsland !== null) {
     drawActiveIslandHighlight();
-    drawReceiptsInIsland(activeIsland);
   }
 }
 
