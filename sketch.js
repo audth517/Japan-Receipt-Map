@@ -129,6 +129,11 @@ function draw() {
   // 처음 ready 되는 순간 receipts 분배
   if (!assigned) {
     assignReceiptsToIslands();
+
+    for (let isl of islands) {
+      computeScalingForIsland(isl);
+    }
+    
     assigned = true;
   }
 
@@ -233,4 +238,55 @@ function mousePressed() {
       break;
     }
   }
+}
+
+// ------------------------------------------------------
+// 가격 기반 스케일링 적용: island 내부에 들어갈 영수증 크기 계산
+// ------------------------------------------------------
+function computeIslandScaling(island) {
+  let list = island.receipts;
+  if (list.length === 0) return;
+
+  // 1) price 합
+  let sumPrice = 0;
+  for (let r of list) sumPrice += r.price;
+
+  // 2) island 사용 가능 면적 (60% 정도만 사용)
+  let usableArea = island.w * island.h * 0.6;
+
+  // 3) 스케일링 패러미터 K
+  let K = usableArea / sumPrice;
+
+  island.scaleK = K; // 기록 (디버깅용)
+}
+
+// ------------------------------------------------------
+// island.receipts 안에 scaledW, scaledH 계산하여 저장
+// ------------------------------------------------------
+function applyPriceScaling(island) {
+
+  if (!island.scaleK) return;
+
+  for (let r of island.receipts) {
+    let aspect = r.width / r.height;
+
+    // 목표 면적 = price * K
+    let area = r.price * island.scaleK;
+
+    // 실제 w, h 계산
+    let scaledH = Math.sqrt(area / aspect);
+    let scaledW = scaledH * aspect;
+
+    r.scaledW = scaledW;
+    r.scaledH = scaledH;
+  }
+}
+
+// ------------------------------------------------------
+// island 하나에 대해 scaling 계산 전체 실행
+// (1) scaling factor 계산 → (2) 각 receipt 크기 적용
+// ------------------------------------------------------
+function computeScalingForIsland(island) {
+  computeIslandScaling(island);
+  applyPriceScaling(island);
 }
