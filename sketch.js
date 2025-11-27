@@ -149,7 +149,7 @@ function draw() {
     assignReceiptsToIslands();
 
     for (let isl of islands) {
-      computeScalingForIsland(isl);
+      computeIslandScaling(isl);
       applyPriceScaling(isl);
     }
 
