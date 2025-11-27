@@ -20,7 +20,7 @@ let imgHokkaido, imgHonshu, imgShikoku, imgKyushu;
 // -----------------------------------------------------
 function preload() {
 
-  // 섬 SVG
+  // 섬 SVG 파일
   imgHokkaido = loadImage("assets/islands/japan_hokkaido.svg");
   imgHonshu   = loadImage("assets/islands/japan_honshu.svg");
   imgShikoku  = loadImage("assets/islands/japan_shikoku.svg");
@@ -44,7 +44,7 @@ function setup() {
 
   totalImages = receiptsData.length;
 
-  // 개별 영수증 이미지 로딩
+  // 영수증 이미지 로딩
   for (let r of receiptsData) {
     let path = "assets/receipts/" + r.filename;
 
@@ -74,41 +74,24 @@ function windowResized() {
 // -----------------------------------------------------
 // ISLAND CREATION
 // -----------------------------------------------------
-
 function setupIslands() {
   islands = [];
 
-  // ─ 일본 전체 박스(전도) 크기 & 위치 ─
-  const mapH = height * 0.85;      // 화면 높이의 85%
-  const mapW = mapH * 0.35;        // 세로로 긴 일본 전체 비율
+  // 일본 지도 전체 박스 크기
+  const mapH = height * 0.85;    // 전체 화면의 85% 높이
+  const mapW = mapH * 0.35;      // 일본 전체 비율
   const mapX = (width - mapW) / 2;
-  const mapY = height * 0.10;      // 전체를 꽤 아래로 내림
+  const mapY = height * 0.10;    // Japan 전체를 아래쪽으로 배치
 
-  // Honshu(혼슈) 기준 높이 (일본 전체 높이의 55%)
+  // 혼슈 높이(Honshu 기준)
   const baseHonshuH = mapH * 0.55;
 
-  // 섬별 정의: 일본 지도에서의 상대 위치(dx, dy) + Honshu 대비 크기 비율
+  // 각 섬의 위치 & 혼슈 대비 크기 비율
   const defs = {
-    Honshu: {
-      dx: 0.60,    // 일본 전체 중 가로 60% 지점
-      dy: 0.55,    // 세로 55% 지점
-      hRatio: 1.0  // 혼슈는 기준 1배
-    },
-    Hokkaido: {
-      dx: 0.70,    // 혼슈보다 살짝 오른쪽/위
-      dy: 0.25,
-      hRatio: 0.60 // 혼슈 높이의 60%
-    },
-    Shikoku: {
-      dx: 0.50,    // 혼슈 아래 왼쪽
-      dy: 0.80,
-      hRatio: 0.25
-    },
-    Kyushu: {
-      dx: 0.38,    // 시코쿠보다 더 왼쪽/아래
-      dy: 0.95,
-      hRatio: 0.35
-    }
+    Honshu:   { dx: 0.60, dy: 0.55, hRatio: 1.00 },
+    Hokkaido: { dx: 0.70, dy: 0.25, hRatio: 0.60 },
+    Shikoku:  { dx: 0.50, dy: 0.80, hRatio: 0.25 },
+    Kyushu:   { dx: 0.38, dy: 0.95, hRatio: 0.35 }
   };
 
   const order = ["Honshu", "Hokkaido", "Shikoku", "Kyushu"];
@@ -123,11 +106,11 @@ function setupIslands() {
 
     const d = defs[name];
 
-    // 이 섬의 목표 높이(화면 기준)
+    // 섬 높이와 너비 (SVG 비율 유지)
     const islandH = baseHonshuH * d.hRatio;
     const islandW = islandH * (img.width / img.height);
 
-    // 일본 전체(mapX, mapY, mapW, mapH) 안에서의 중심 좌표
+    // 일본 전체 중심 좌표
     const cx = mapX + mapW * d.dx;
     const cy = mapY + mapH * d.dy;
 
@@ -141,6 +124,7 @@ function setupIslands() {
     });
   }
 }
+
 
 // -----------------------------------------------------
 // RANDOM ASSIGNMENT
@@ -161,16 +145,16 @@ function draw() {
 
   if (!ready) {
     push();
-    resetMatrix();             // 혹시 모를 translate/scale 초기화
+    resetMatrix();
+    textAlign(CENTER, CENTER);
     fill(245);
     textSize(24);
-    textAlign(CENTER, CENTER); // 가로/세로 모두 중앙 기준
     text(`Loading images… ${imagesLoaded}/${totalImages}`, width / 2, height / 2);
     pop();
     return;
   }
 
-  // 첫 1회만 실행
+  // 한 번만 실행되는 부분
   if (!assigned) {
     assignReceiptsToIslands();
 
@@ -197,7 +181,6 @@ function draw() {
 // -----------------------------------------------------
 // DRAW ISLAND SVG
 // -----------------------------------------------------
-
 function drawIslandImage(island) {
   let img;
 
@@ -211,26 +194,20 @@ function drawIslandImage(island) {
   push();
   imageMode(CORNER);
 
-  // 원본 비율
   let aspect = img.width / img.height;
-
-  // 받침 박스 비율
   let boxAspect = island.w / island.h;
 
   let drawW, drawH;
 
   // contain 방식
   if (aspect > boxAspect) {
-    // 가로가 기준
     drawW = island.w;
     drawH = island.w / aspect;
   } else {
-    // 세로가 기준
     drawH = island.h;
     drawW = island.h * aspect;
   }
 
-  // 중앙 정렬
   let x = island.x + (island.w - drawW) * 0.5;
   let y = island.y + (island.h - drawH) * 0.5;
 
@@ -238,6 +215,7 @@ function drawIslandImage(island) {
 
   pop();
 }
+
 
 // -----------------------------------------------------
 // RECEIPT LAYOUT
@@ -268,13 +246,8 @@ function drawReceiptsInIsland(island) {
   }
   if (currentRow.length) rows.push(currentRow);
 
-  let rowHeights = rows.map(row =>
-    row.reduce((m, r) => max(m, r.scaledH), 0)
-  );
-
-  let totalHeight =
-    rowHeights.reduce((a, b) => a + b, 0) +
-    padding * (rowHeights.length - 1);
+  let rowHeights = rows.map(row => row.reduce((m, r) => max(m, r.scaledH), 0));
+  let totalHeight = rowHeights.reduce((a, b) => a + b, 0) + padding * (rowHeights.length - 1);
 
   let y = island.y + (island.h - totalHeight) / 2;
 
@@ -282,11 +255,7 @@ function drawReceiptsInIsland(island) {
     let row = rows[i];
     let maxH = rowHeights[i];
 
-    let rowWidth = row.reduce(
-      (acc, r, idx) => acc + r.scaledW + (idx ? padding : 0),
-      0
-    );
-
+    let rowWidth = row.reduce((acc, r, idx) => acc + r.scaledW + (idx ? padding : 0), 0);
     let x = island.x + (island.w - rowWidth) / 2;
 
     for (let r of row) {
@@ -307,7 +276,7 @@ function computeIslandScaling(island) {
   let sum = 0;
   for (let r of island.receipts) sum += r.price;
 
-  island.scaleK = (island.w * island.h * 0.05) / sum;
+  island.scaleK = (island.w * island.h * 0.05) / sum;   // 크기 감소
 }
 
 function applyPriceScaling(island) {
