@@ -7,8 +7,69 @@ let ready = false;
 
 let islands = [];
 let activeIsland = null;
-
 let assigned = false;
+
+// -----------------------------
+// ★ Polygon definitions (0~1 normalized)
+// -----------------------------
+
+const polyHokkaido = [
+  {x:0.10, y:0.05},
+  {x:0.25, y:0.00},
+  {x:0.55, y:0.05},
+  {x:0.80, y:0.15},
+  {x:0.95, y:0.40},
+  {x:0.85, y:0.70},
+  {x:0.60, y:0.90},
+  {x:0.35, y:0.95},
+  {x:0.15, y:0.80},
+  {x:0.05, y:0.50},
+  {x:0.08, y:0.25}
+];
+
+const polyHonshu = [
+  {x:0.05, y:0.20},
+  {x:0.15, y:0.10},
+  {x:0.35, y:0.05},
+  {x:0.55, y:0.10},
+  {x:0.80, y:0.20},
+  {x:0.95, y:0.40},
+  {x:0.90, y:0.60},
+  {x:0.75, y:0.75},
+  {x:0.55, y:0.85},
+  {x:0.30, y:0.90},
+  {x:0.12, y:0.80},
+  {x:0.05, y:0.55}
+];
+
+const polyShikoku = [
+  {x:0.05, y:0.30},
+  {x:0.20, y:0.15},
+  {x:0.55, y:0.10},
+  {x:0.80, y:0.22},
+  {x:0.90, y:0.40},
+  {x:0.80, y:0.60},
+  {x:0.55, y:0.75},
+  {x:0.25, y:0.70},
+  {x:0.10, y:0.55}
+];
+
+const polyKyushu = [
+  {x:0.10, y:0.15},
+  {x:0.35, y:0.05},
+  {x:0.60, y:0.10},
+  {x:0.80, y:0.25},
+  {x:0.90, y:0.45},
+  {x:0.80, y:0.65},
+  {x:0.55, y:0.85},
+  {x:0.30, y:0.90},
+  {x:0.12, y:0.75},
+  {x:0.05, y:0.45}
+];
+
+// -----------------------------
+// JSON + Image preload
+// -----------------------------
 
 async function preloadJSON() {
   const response = await fetch("data/receipts.json?v=" + Date.now());
@@ -28,9 +89,7 @@ async function preload() {
       path,
       () => {
         imagesLoaded++;
-        if (imagesLoaded === totalImages) {
-          ready = true;
-        }
+        if (imagesLoaded === totalImages) ready = true;
       },
       () => console.error("Failed:", path)
     );
@@ -50,9 +109,10 @@ function windowResized() {
   setupIslands();
 }
 
-// ------------------------------------------------------
-// 4개 섬 placeholder 설정
-// ------------------------------------------------------
+// -----------------------------
+// Make Islands + Polygon attach
+// -----------------------------
+
 function setupIslands() {
   islands = [];
 
@@ -67,7 +127,8 @@ function setupIslands() {
     y: margin,
     w: w,
     h: hSmall,
-    receipts: []
+    receipts: [],
+    polygon: polyHokkaido
   });
 
   islands.push({
@@ -76,7 +137,8 @@ function setupIslands() {
     y: margin,
     w: w,
     h: hBig,
-    receipts: []
+    receipts: [],
+    polygon: polyHonshu
   });
 
   islands.push({
@@ -85,7 +147,8 @@ function setupIslands() {
     y: height - hSmall - margin,
     w: w * 0.5,
     h: hSmall,
-    receipts: []
+    receipts: [],
+    polygon: polyShikoku
   });
 
   islands.push({
@@ -94,13 +157,15 @@ function setupIslands() {
     y: height - hSmall - margin,
     w: w * 0.55,
     h: hSmall,
-    receipts: []
+    receipts: [],
+    polygon: polyKyushu
   });
 }
 
-// ------------------------------------------------------
-// 테스트용: receipts를 랜덤 island에 분배
-// ------------------------------------------------------
+// -----------------------------
+// Random assignment (test)
+// -----------------------------
+
 function assignReceiptsToIslands() {
   for (let r of receiptsData) {
     let idx = floor(random(islands.length));
@@ -108,9 +173,10 @@ function assignReceiptsToIslands() {
   }
 }
 
-// ------------------------------------------------------
+// -----------------------------
 // DRAW
-// ------------------------------------------------------
+// -----------------------------
+
 function draw() {
   background(20);
 
@@ -121,34 +187,34 @@ function draw() {
     return;
   }
 
-  // 처음 ready 되는 순간 receipts 분배 + 가격 기반 scaling
+  // First frame after ready
   if (!assigned) {
     assignReceiptsToIslands();
 
     for (let isl of islands) {
-      computeScalingForIsland(isl);     // K 계산
-      applyPriceScaling(isl);           // scaledW, scaledH 저장
+      computeScalingForIsland(isl);
+      applyPriceScaling(isl);
     }
 
     assigned = true;
   }
 
   drawIslands();
+  drawPolygons();      // ★ polygon outline visualization
 
-  // 모든 섬에 자동으로 영수증 표시
   for (let isl of islands) {
     drawReceiptsInIsland(isl);
   }
 
-  // 클릭된 섬 강조 (옵션)
   if (activeIsland !== null) {
     drawActiveIslandHighlight();
   }
 }
 
-// ------------------------------------------------------
-// 섬 그리기
-// ------------------------------------------------------
+// -----------------------------
+// Draw island background
+// -----------------------------
+
 function drawIslands() {
   textSize(22);
   for (let island of islands) {
@@ -163,37 +229,38 @@ function drawIslands() {
   }
 }
 
-// ------------------------------------------------------
-// 선택된 섬 강조
-// ------------------------------------------------------
-function drawActiveIslandHighlight() {
-  let isl = activeIsland;
+// -----------------------------
+// Draw polygon outline (debug)
+// -----------------------------
 
-  stroke(0, 255, 0);
-  strokeWeight(4);
-  noFill();
-  rect(isl.x, isl.y, isl.w, isl.h, 15);
-
-  fill(255);
-  noStroke();
-  textSize(18);
-  text("Selected → " + isl.name, width / 2, 40);
+function drawPolygons() {
+  for (let island of islands) {
+    push();
+    translate(island.x, island.y);
+    noFill();
+    stroke(255, 70);
+    strokeWeight(2);
+    beginShape();
+    for (let p of island.polygon) {
+      vertex(p.x * island.w, p.y * island.h);
+    }
+    endShape(CLOSE);
+    pop();
+  }
 }
 
-// ------------------------------------------------------
-// Flow layout로 receipt 배치 (가격 기반 크기 사용)
-// ------------------------------------------------------
+// -----------------------------
+// Receipt Placement (Flow Layout)
+// -----------------------------
+
 function drawReceiptsInIsland(island) {
   let list = island.receipts;
   if (list.length === 0) return;
 
   const padding = 10;
-
   const maxWidth = island.w - padding * 2;
 
-  // -----------------------------
-  // 1) 줄 단위로 receipts를 묶기
-  // -----------------------------
+  // ------ 1. rows split ------
   let rows = [];
   let currentRow = [];
   let currentRowWidth = 0;
@@ -202,7 +269,6 @@ function drawReceiptsInIsland(island) {
     let w = r.scaledW;
     let nextWidth = currentRowWidth + w + (currentRow.length > 0 ? padding : 0);
 
-    // 줄이 넘치면 새 줄 생성
     if (nextWidth > maxWidth) {
       rows.push(currentRow);
       currentRow = [r];
@@ -214,51 +280,34 @@ function drawReceiptsInIsland(island) {
   }
   if (currentRow.length > 0) rows.push(currentRow);
 
-  // -----------------------------
-  // 2) 각 줄의 max height 계산
-  // -----------------------------
+  // ------ 2. row heights ------
   let rowHeights = rows.map(row => {
     let maxH = 0;
-    for (let r of row) {
-      if (r.scaledH > maxH) maxH = r.scaledH;
-    }
+    for (let r of row) maxH = max(maxH, r.scaledH);
     return maxH;
   });
 
-  // 전체 높이
-  let totalHeight =
-    rowHeights.reduce((a, b) => a + b, 0) +
-    padding * (rowHeights.length - 1);
+  // total height
+  let totalHeight = rowHeights.reduce((a, b) => a + b, 0) + padding * (rowHeights.length - 1);
 
-  // island 내부 세로 중앙 정렬
-  let startY = island.y + (island.h - totalHeight) / 2;
+  // vertical centering
+  let y = island.y + (island.h - totalHeight) / 2;
 
-  // -----------------------------
-  // 3) 줄 단위로 중앙 정렬 + 그리기
-  // -----------------------------
-
-  let y = startY;
-
+  // ------ 3. render rows ------
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     let row = rows[rowIndex];
     let maxH = rowHeights[rowIndex];
 
-    // 줄 폭 계산
+    // compute row width
     let rowWidth = row.reduce((acc, r, idx) => {
       return acc + r.scaledW + (idx > 0 ? padding : 0);
     }, 0);
 
-    // 가로 가운데 정렬
-    let startX = island.x + (island.w - rowWidth) / 2;
-
-    // 그리기
-    let x = startX;
+    let x = island.x + (island.w - rowWidth) / 2;
 
     for (let r of row) {
       let img = receiptImages[r.id];
-
-      if (img) image(img, x + r.scaledW / 2, y + maxH / 2, r.scaledW, r.scaledH);
-
+      if (img) image(img, x + r.scaledW/2, y + maxH/2, r.scaledW, r.scaledH);
       x += r.scaledW + padding;
     }
 
@@ -266,9 +315,10 @@ function drawReceiptsInIsland(island) {
   }
 }
 
-// ------------------------------------------------------
-// 클릭 이벤트
-// ------------------------------------------------------
+// -----------------------------
+// Click to select island
+// -----------------------------
+
 function mousePressed() {
   activeIsland = null;
 
@@ -285,32 +335,28 @@ function mousePressed() {
   }
 }
 
-// ------------------------------------------------------
-// 가격 기반 스케일링 K 계산
-// ------------------------------------------------------
+// -----------------------------
+// Price-based scaling
+// -----------------------------
+
 function computeIslandScaling(island) {
   let list = island.receipts;
-  if (list.length === 0) return;
+  if (!list.length) return;
 
   let sumPrice = 0;
   for (let r of list) sumPrice += r.price;
 
-  let usableArea = island.w * island.h * 0.6;  // 60% 사용
-
+  let usableArea = island.w * island.h * 0.6;
   let K = usableArea / sumPrice;
 
   island.scaleK = K;
 }
 
-// ------------------------------------------------------
-// scaledW, scaledH 적용
-// ------------------------------------------------------
 function applyPriceScaling(island) {
   if (!island.scaleK) return;
 
   for (let r of island.receipts) {
     let aspect = r.width / r.height;
-
     let area = r.price * island.scaleK;
 
     let scaledH = Math.sqrt(area / aspect);
@@ -321,9 +367,6 @@ function applyPriceScaling(island) {
   }
 }
 
-// ------------------------------------------------------
-// island scaling 전체 실행
-// ------------------------------------------------------
 function computeScalingForIsland(island) {
   computeIslandScaling(island);
   applyPriceScaling(island);
