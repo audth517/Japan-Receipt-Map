@@ -9,6 +9,8 @@ let islands = [];
 let activeIsland = null;
 let assigned = false;
 
+let shapeHokkaido, shapeHonshu, shapeShikoku, shapeKyushu;
+
 // -----------------------------
 // ★ Polygon definitions (0~1 normalized)
 // -----------------------------
@@ -78,6 +80,11 @@ async function preloadJSON() {
 }
 
 async function preload() {
+  shapeKyushu   = loadShape("japan_kyushu.svg");
+  shapeHokkaido = loadShape("japan_hokkaido.svg");
+  shapeShikoku  = loadShape("japan_shikoku.svg");
+  shapeHonshu   = loadShape("japan_honshu.svg");
+  
   await preloadJSON();
 
   totalImages = receiptsData.length;
@@ -128,7 +135,7 @@ function setupIslands() {
     w: w,
     h: hSmall,
     receipts: [],
-    polygon: polyHokkaido
+    svg: shapeHokkaido 
   });
 
   islands.push({
@@ -138,7 +145,7 @@ function setupIslands() {
     w: w,
     h: hBig,
     receipts: [],
-    polygon: polyHonshu
+    svg: shapeHonshu
   });
 
   islands.push({
@@ -148,7 +155,7 @@ function setupIslands() {
     w: w * 0.5,
     h: hSmall,
     receipts: [],
-    polygon: polyShikoku
+    svg: shapeShikoku
   });
 
   islands.push({
@@ -158,7 +165,7 @@ function setupIslands() {
     w: w * 0.55,
     h: hSmall,
     receipts: [],
-    polygon: polyKyushu
+    svg: shapeKyushu
   });
 }
 
@@ -200,7 +207,10 @@ function draw() {
   }
 
   drawIslands();
-  drawPolygons();      // ★ polygon outline visualization
+
+  for (let isl of islands) {
+    drawIslandSVG(isl);
+  }
 
   for (let isl of islands) {
     drawReceiptsInIsland(isl);
@@ -209,6 +219,15 @@ function draw() {
   if (activeIsland !== null) {
     drawActiveIslandHighlight();
   }
+}
+
+function drawIslandSVG(island) {
+  if (!island.svg) return;  // 안전
+
+  push();
+  translate(island.x, island.y);
+  shape(island.svg, 0, 0, island.w, island.h);
+  pop();
 }
 
 // -----------------------------
