@@ -5,6 +5,8 @@ let imagesLoaded = 0;
 let totalImages = 0;
 let ready = false;
 
+let assigned = false;
+
 let imgHokkaido, imgHonshu, imgShikoku, imgKyushu;
 
 function preload() {
