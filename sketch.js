@@ -79,44 +79,38 @@ function setupIslands() {
   islands = [];
 
   // ─ 일본 전체 박스(전도) 크기 & 위치 ─
-  const mapH = height * 0.75;      // 화면 높이의 75%
-  const mapW = mapH * 0.55;        // 세로로 긴 일본 비율
+  const mapH = height * 0.85;      // 화면 높이의 75%
+  const mapW = mapH * 0.35;        // 세로로 긴 일본 비율
   const mapX = (width - mapW) / 2;
-  const mapY = height * 0.20;      // 전체를 더 아래로 내림
+  const mapY = height * 0.15;      // 전체를 더 아래로 내림
 
-  // 실제 일본 지도 느낌에 맞춘 상대 위치 (0~1)
-  // (보여준 이미지 기준으로 튜닝)
-  const anchor = {
-    Hokkaido: { x: 0.65, y: 0.10, scale: 0.38 },  // 오른쪽 위
-    Honshu:   { x: 0.60, y: 0.52, scale: 1.00 },  // 중앙 세로로 긴 큰 섬
-    Shikoku:  { x: 0.48, y: 0.74, scale: 0.30 },  // 혼슈 아래 왼쪽
-    Kyushu:   { x: 0.36, y: 0.86, scale: 0.42 },  // 왼쪽 아래
+  const baseH = mapH * 0.55;
+  const baseW = baseH * (imgHonshu.width / imgHonshu.height);
+  
+  const def = {
+    Honshu:   { dx: 0.62, dy: 0.57, h: baseH },
+    Hokkaido: { dx: 0.72, dy: 0.23, h: baseH * 0.58 },
+    Shikoku:  { dx: 0.49, dy: 0.78, h: baseH * 0.22 },
+    Kyushu:   { dx: 0.37, dy: 0.94, h: baseH * 0.32 },
   };
 
-  const islandNames = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
+  for (let name in defs) {
+    let img = (name==="Hokkaido")?imgHokkaido:
+              (name==="Honshu")?imgHonshu:
+              (name==="Shikoku")?imgShikoku:
+              imgKyushu;
 
-  for (let name of islandNames) {
-    const a = anchor[name];
-
-    let img = null;
-    if (name === "Hokkaido") img = imgHokkaido;
-    if (name === "Honshu")   img = imgHonshu;
-    if (name === "Shikoku")  img = imgShikoku;
-    if (name === "Kyushu")   img = imgKyushu;
-    if (!img) continue;
-
-    const aspect = img.width / img.height;
-
-    // Honshu scale=1.0 기준으로 비율 유지
-    const regionH = mapH * a.scale;
-    const regionW = regionH * aspect;
+    const d = defs[name];
+    
+    const h = d.h;
+    const w = h * (img.width / img.height);
 
     islands.push({
       name,
-      x: mapX + mapW * a.x - regionW * 0.5,
-      y: mapY + mapH * a.y - regionH * 0.5,
-      w: regionW,
-      h: regionH,
+      x: mapX + mapW * d.dx - w/2,
+      y: mapY + mapH * d.dy - h/2,
+      w: w,
+      h: h,
       receipts: [],
     });
   }
