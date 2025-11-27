@@ -21,10 +21,10 @@ let imgHokkaido, imgHonshu, imgShikoku, imgKyushu;
 function preload() {
 
   // 섬 SVG 파일
-  imgHokkaido = loadImage("assets/islands/japan_hokkaido.svg");
-  imgHonshu   = loadImage("assets/islands/japan_honshu.svg");
-  imgShikoku  = loadImage("assets/islands/japan_shikoku.svg");
-  imgKyushu   = loadImage("assets/islands/japan_kyushu.svg");
+  imgHokkaido = loadImage("assets/islands/japan_hokkaido.svg?v=" + Date.now());
+  imgHonshu   = loadImage("assets/islands/japan_honshu.svg?v=" + Date.now());
+  imgShikoku  = loadImage("assets/islands/japan_shikoku.svg?v=" + Date.now());
+  imgKyushu   = loadImage("assets/islands/japan_kyushu.svg?v=" + Date.now());
 
   // JSON 로딩
   receiptsData = loadJSON("data/receipts.json?v=" + Date.now());
