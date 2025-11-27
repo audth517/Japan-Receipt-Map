@@ -79,38 +79,64 @@ function setupIslands() {
   islands = [];
 
   // ─ 일본 전체 박스(전도) 크기 & 위치 ─
-  const mapH = height * 0.85;      // 화면 높이의 75%
-  const mapW = mapH * 0.35;        // 세로로 긴 일본 비율
+  const mapH = height * 0.85;      // 화면 높이의 85%
+  const mapW = mapH * 0.35;        // 세로로 긴 일본 전체 비율
   const mapX = (width - mapW) / 2;
-  const mapY = height * 0.15;      // 전체를 더 아래로 내림
+  const mapY = height * 0.10;      // 전체를 꽤 아래로 내림
 
-  const baseH = mapH * 0.55;
-  const baseW = baseH * (imgHonshu.width / imgHonshu.height);
-  
-  const def = {
-    Honshu:   { dx: 0.62, dy: 0.57, h: baseH },
-    Hokkaido: { dx: 0.72, dy: 0.23, h: baseH * 0.58 },
-    Shikoku:  { dx: 0.49, dy: 0.78, h: baseH * 0.22 },
-    Kyushu:   { dx: 0.37, dy: 0.94, h: baseH * 0.32 },
+  // Honshu(혼슈) 기준 높이 (일본 전체 높이의 55%)
+  const baseHonshuH = mapH * 0.55;
+
+  // 섬별 정의: 일본 지도에서의 상대 위치(dx, dy) + Honshu 대비 크기 비율
+  const defs = {
+    Honshu: {
+      dx: 0.60,    // 일본 전체 중 가로 60% 지점
+      dy: 0.55,    // 세로 55% 지점
+      hRatio: 1.0  // 혼슈는 기준 1배
+    },
+    Hokkaido: {
+      dx: 0.70,    // 혼슈보다 살짝 오른쪽/위
+      dy: 0.25,
+      hRatio: 0.60 // 혼슈 높이의 60%
+    },
+    Shikoku: {
+      dx: 0.50,    // 혼슈 아래 왼쪽
+      dy: 0.80,
+      hRatio: 0.25
+    },
+    Kyushu: {
+      dx: 0.38,    // 시코쿠보다 더 왼쪽/아래
+      dy: 0.95,
+      hRatio: 0.35
+    }
   };
 
-  for (let name in defs) {
-    let img = (name==="Hokkaido")?imgHokkaido:
-              (name==="Honshu")?imgHonshu:
-              (name==="Shikoku")?imgShikoku:
-              imgKyushu;
+  const order = ["Honshu", "Hokkaido", "Shikoku", "Kyushu"];
+
+  for (let name of order) {
+    let img = null;
+    if (name === "Hokkaido") img = imgHokkaido;
+    if (name === "Honshu")   img = imgHonshu;
+    if (name === "Shikoku")  img = imgShikoku;
+    if (name === "Kyushu")   img = imgKyushu;
+    if (!img) continue;
 
     const d = defs[name];
-    
-    const h = d.h;
-    const w = h * (img.width / img.height);
+
+    // 이 섬의 목표 높이(화면 기준)
+    const islandH = baseHonshuH * d.hRatio;
+    const islandW = islandH * (img.width / img.height);
+
+    // 일본 전체(mapX, mapY, mapW, mapH) 안에서의 중심 좌표
+    const cx = mapX + mapW * d.dx;
+    const cy = mapY + mapH * d.dy;
 
     islands.push({
       name,
-      x: mapX + mapW * d.dx - w/2,
-      y: mapY + mapH * d.dy - h/2,
-      w: w,
-      h: h,
+      x: cx - islandW / 2,
+      y: cy - islandH / 2,
+      w: islandW,
+      h: islandH,
       receipts: [],
     });
   }
