@@ -1,7 +1,10 @@
+// -----------------------------------------------------
+// GLOBAL VARIABLES
+// -----------------------------------------------------
 let receiptsData = [];
 let receiptImages = {};
 
-let islands = [];        // ★★★ 반드시 있어야 함
+let islands = [];
 let activeIsland = null;
 
 let imagesLoaded = 0;
@@ -11,34 +14,37 @@ let assigned = false;
 
 let imgHokkaido, imgHonshu, imgShikoku, imgKyushu;
 
-// -----------------------------
+
+// -----------------------------------------------------
 // PRELOAD
-// -----------------------------
+// -----------------------------------------------------
 function preload() {
-  // SVG 섬 이미지
+
+  // 섬 SVG
   imgHokkaido = loadImage("assets/islands/japan_hokkaido.svg");
   imgHonshu   = loadImage("assets/islands/japan_honshu.svg");
   imgShikoku  = loadImage("assets/islands/japan_shikoku.svg");
   imgKyushu   = loadImage("assets/islands/japan_kyushu.svg");
 
-  // JSON 동기 로딩
+  // JSON 로딩
   receiptsData = loadJSON("data/receipts.json?v=" + Date.now());
 }
 
-// -----------------------------
+
+// -----------------------------------------------------
 // SETUP
-// -----------------------------
+// -----------------------------------------------------
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  imageMode(CENTER);  // receipts는 CENTER 기반
+  imageMode(CENTER);
 
   if (!Array.isArray(receiptsData)) {
     receiptsData = Object.values(receiptsData);
   }
 
-  // 영수증 이미지 로딩
   totalImages = receiptsData.length;
 
+  // 개별 영수증 이미지 로딩
   for (let r of receiptsData) {
     let path = "assets/receipts/" + r.filename;
 
@@ -55,14 +61,19 @@ function setup() {
   setupIslands();
 }
 
+
+// -----------------------------------------------------
+// WINDOW RESIZE
+// -----------------------------------------------------
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   setupIslands();
 }
 
-// -----------------------------
-// ISLAND SETUP
-// -----------------------------
+
+// -----------------------------------------------------
+// ISLAND CREATION
+// -----------------------------------------------------
 function setupIslands() {
   islands = [];
 
@@ -108,9 +119,10 @@ function setupIslands() {
   });
 }
 
-// -----------------------------
-// RANDOM ASSIGN
-// -----------------------------
+
+// -----------------------------------------------------
+// RANDOM ASSIGNMENT
+// -----------------------------------------------------
 function assignReceiptsToIslands() {
   for (let r of receiptsData) {
     let idx = floor(random(islands.length));
@@ -118,9 +130,10 @@ function assignReceiptsToIslands() {
   }
 }
 
-// -----------------------------
-// DRAW
-// -----------------------------
+
+// -----------------------------------------------------
+// DRAW LOOP
+// -----------------------------------------------------
 function draw() {
   background(20);
 
@@ -131,7 +144,7 @@ function draw() {
     return;
   }
 
-  // 처음 1회만 영수증 배치 + 스케일링
+  // 첫 1회만 실행
   if (!assigned) {
     assignReceiptsToIslands();
 
@@ -143,7 +156,7 @@ function draw() {
     assigned = true;
   }
 
-  // 섬 SVG 렌더링
+  // 섬 그리기
   for (let island of islands) {
     drawIslandImage(island);
   }
@@ -154,9 +167,10 @@ function draw() {
   }
 }
 
-// -----------------------------
-// DRAW ISLAND (SVG)
-// -----------------------------
+
+// -----------------------------------------------------
+// DRAW ISLAND SVG
+// -----------------------------------------------------
 function drawIslandImage(island) {
   let img;
 
@@ -168,14 +182,15 @@ function drawIslandImage(island) {
   if (!img) return;
 
   push();
-  imageMode(CORNER);  // ★★★ SVG는 무조건 CORNER
+  imageMode(CORNER);  // SVG는 CORNER
   image(img, island.x, island.y, island.w, island.h);
   pop();
 }
 
-// -----------------------------
+
+// -----------------------------------------------------
 // RECEIPT LAYOUT
-// -----------------------------
+// -----------------------------------------------------
 function drawReceiptsInIsland(island) {
   let list = island.receipts;
   if (list.length === 0) return;
@@ -187,7 +202,6 @@ function drawReceiptsInIsland(island) {
   let currentRow = [];
   let currentWidth = 0;
 
-  // row split
   for (let r of list) {
     let w = r.scaledW;
     let nextWidth = currentWidth + w + (currentRow.length ? padding : 0);
@@ -203,7 +217,6 @@ function drawReceiptsInIsland(island) {
   }
   if (currentRow.length) rows.push(currentRow);
 
-  // compute row heights
   let rowHeights = rows.map(row =>
     row.reduce((m, r) => max(m, r.scaledH), 0)
   );
@@ -214,10 +227,9 @@ function drawReceiptsInIsland(island) {
 
   let y = island.y + (island.h - totalHeight) / 2;
 
-  // render rows
-  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-    let row = rows[rowIndex];
-    let maxH = rowHeights[rowIndex];
+  for (let i = 0; i < rows.length; i++) {
+    let row = rows[i];
+    let maxH = rowHeights[i];
 
     let rowWidth = row.reduce(
       (acc, r, idx) => acc + r.scaledW + (idx ? padding : 0),
@@ -236,9 +248,10 @@ function drawReceiptsInIsland(island) {
   }
 }
 
-// -----------------------------
+
+// -----------------------------------------------------
 // PRICE SCALING
-// -----------------------------
+// -----------------------------------------------------
 function computeIslandScaling(island) {
   let sum = 0;
   for (let r of island.receipts) sum += r.price;
