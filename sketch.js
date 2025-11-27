@@ -89,9 +89,9 @@ function setupIslands() {
   // 각 섬의 위치 & 혼슈 대비 크기 비율
   const defs = {
     Honshu:   { dx: 0.47, dy: 0.54, hRatio: 1.00 },
-    Hokkaido: { dx: 0.74, dy: 0.14, hRatio: 0.62 },
-    Shikoku:  { dx: 0.33, dy: 0.82, hRatio: 0.26 },
-    Kyushu:   { dx: 0.19, dy: 0.90, hRatio: 0.36 }
+    Hokkaido: { dx: 0.80, dy: 0.10, hRatio: 0.55 },
+    Shikoku:  { dx: 0.30, dy: 0.83, hRatio: 0.26 },
+    Kyushu:   { dx: 0.10, dy: 0.93, hRatio: 0.36 }
   };
 
   const order = ["Honshu", "Hokkaido", "Shikoku", "Kyushu"];
