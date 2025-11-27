@@ -78,10 +78,10 @@ function setupIslands() {
   islands = [];
 
   // 일본 지도 전체 박스 크기
-  const mapH = height * 0.95;    // 전체 화면의 85% 높이
-  const mapW = mapH * 0.45;      // 일본 전체 비율
+  const mapH = height * 1.10;   // 화면보다 더 크게 (약간 넘나도 괜찮음)
+  const mapW = mapH * 0.43;     // 실제 일본 비율에 가까움
   const mapX = (width - mapW) / 2;
-  const mapY = height * 0.10;    // Japan 전체를 아래쪽으로 배치
+  const mapY = height * (-0.05);  // 살짝 위로 올림
 
   // 혼슈 높이(Honshu 기준)
   const baseHonshuH = mapH * 0.55;
@@ -89,9 +89,9 @@ function setupIslands() {
   // 각 섬의 위치 & 혼슈 대비 크기 비율
   const defs = {
     Honshu:   { dx: 0.47, dy: 0.54, hRatio: 1.00 },
-    Hokkaido: { dx: 0.80, dy: 0.10, hRatio: 0.55 },
-    Shikoku:  { dx: 0.30, dy: 0.83, hRatio: 0.26 },
-    Kyushu:   { dx: 0.10, dy: 0.93, hRatio: 0.36 }
+    Hokkaido: { dx: 0.69, dy: 0.19, hRatio: 0.52 },
+    Shikoku:  { dx: 0.39, dy: 0.79, hRatio: 0.23 },
+    Kyushu:   { dx: 0.28, dy: 0.89, hRatio: 0.37 }
   };
 
   const order = ["Honshu", "Hokkaido", "Shikoku", "Kyushu"];
