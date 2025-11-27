@@ -74,51 +74,53 @@ function windowResized() {
 // -----------------------------------------------------
 // ISLAND CREATION
 // -----------------------------------------------------
+
 function setupIslands() {
   islands = [];
 
-  const margin = 50;
-  const w = width * 0.35;
-  const hBig = height * 0.55;
-  const hSmall = height * 0.28;
+  // 일본 전체 크기 비율
+  const mapH = height * 0.7;
+  const mapW = mapH * 0.55; // 일본 전체 가로비율 (세로 긴 지도)
 
-  islands.push({
-    name: "Hokkaido",
-    x: margin,
-    y: margin,
-    w: w,
-    h: hSmall,
-    receipts: [],
-  });
+  const mapX = (width - mapW) / 2;
+  const mapY = height * 0.15;
 
-  islands.push({
-    name: "Honshu",
-    x: width - w - margin,
-    y: margin,
-    w: w,
-    h: hBig,
-    receipts: [],
-  });
+  // 상대 좌표 기반 anchor positions
+  const anchor = {
+    Hokkaido: { x: 0.20, y: 0.00, scale: 0.32 },
+    Honshu:   { x: 0.55, y: 0.25, scale: 1.00 },
+    Shikoku:  { x: 0.35, y: 0.72, scale: 0.28 },
+    Kyushu:   { x: 0.10, y: 0.65, scale: 0.40 },
+  };
 
-  islands.push({
-    name: "Shikoku",
-    x: margin,
-    y: height - hSmall - margin,
-    w: w * 0.5,
-    h: hSmall,
-    receipts: [],
-  });
+  // 섬 목록
+  const islandNames = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
+  for (let name of islandNames) {
+    const a = anchor[name];
 
-  islands.push({
-    name: "Kyushu",
-    x: width - w * 0.55 - margin,
-    y: height - hSmall - margin,
-    w: w * 0.55,
-    h: hSmall,
-    receipts: [],
-  });
+    // 섬 SVG
+    let img = null;
+    if (name === "Hokkaido") img = imgHokkaido;
+    if (name === "Honshu")   img = imgHonshu;
+    if (name === "Shikoku")  img = imgShikoku;
+    if (name === "Kyushu")   img = imgKyushu;
+
+    const aspect = img.width / img.height;
+
+    // 섬 크기 (Honshu가 기준)
+    const regionH = mapH * a.scale;
+    const regionW = regionH * aspect;
+
+    islands.push({
+      name,
+      x: mapX + mapW * a.x - regionW * 0.5,
+      y: mapY + mapH * a.y - regionH * 0.5,
+      w: regionW,
+      h: regionH,
+      receipts: [],
+    });
+  }
 }
-
 
 // -----------------------------------------------------
 // RANDOM ASSIGNMENT
@@ -281,7 +283,7 @@ function computeIslandScaling(island) {
   let sum = 0;
   for (let r of island.receipts) sum += r.price;
 
-  island.scaleK = (island.w * island.h * 0.6) / sum;
+  island.scaleK = (island.w * island.h * 0.2) / sum;
 }
 
 function applyPriceScaling(island) {
