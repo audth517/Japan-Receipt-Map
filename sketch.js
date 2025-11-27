@@ -171,6 +171,7 @@ function draw() {
 // -----------------------------------------------------
 // DRAW ISLAND SVG
 // -----------------------------------------------------
+
 function drawIslandImage(island) {
   let img;
 
@@ -184,30 +185,33 @@ function drawIslandImage(island) {
   push();
   imageMode(CORNER);
 
-  let svgAspect = img.width / img.height;
+  // 원본 비율
+  let aspect = img.width / img.height;
+
+  // 받침 박스 비율
   let boxAspect = island.w / island.h;
 
   let drawW, drawH;
 
-  if (svgAspect > boxAspect) {
-    // 가로가 더 넓음 → 가로에 맞추기
+  // contain 방식
+  if (aspect > boxAspect) {
+    // 가로가 기준
     drawW = island.w;
-    drawH = island.w / svgAspect;
+    drawH = island.w / aspect;
   } else {
-    // 세로가 더 큼 → 세로에 맞추기
+    // 세로가 기준
     drawH = island.h;
-    drawW = island.h * svgAspect;
+    drawW = island.h * aspect;
   }
 
   // 중앙 정렬
-  let offsetX = island.x + (island.w - drawW) / 2;
-  let offsetY = island.y + (island.h - drawH) / 2;
+  let x = island.x + (island.w - drawW) * 0.5;
+  let y = island.y + (island.h - drawH) * 0.5;
 
-  image(img, offsetX, offsetY, drawW, drawH);
+  image(img, x, y, drawW, drawH);
 
   pop();
 }
-
 
 // -----------------------------------------------------
 // RECEIPT LAYOUT
