@@ -187,30 +187,82 @@ function drawReceiptsInIsland(island) {
   let list = island.receipts;
   if (list.length === 0) return;
 
-  let padding = 10;
+  const padding = 10;
 
-  let x = island.x + padding;
-  let y = island.y + padding;
+  const maxWidth = island.w - padding * 2;
 
-  let maxX = island.x + island.w - padding;
+  // -----------------------------
+  // 1) 줄 단위로 receipts를 묶기
+  // -----------------------------
+  let rows = [];
+  let currentRow = [];
+  let currentRowWidth = 0;
 
   for (let r of list) {
-    let img = receiptImages[r.id];
-    if (!img) continue;
-
     let w = r.scaledW;
-    let h = r.scaledH;
+    let nextWidth = currentRowWidth + w + (currentRow.length > 0 ? padding : 0);
 
-    // 줄바꿈 처리
-    if (x + w > maxX) {
-      x = island.x + padding;
-      y += h + padding;
+    // 줄이 넘치면 새 줄 생성
+    if (nextWidth > maxWidth) {
+      rows.push(currentRow);
+      currentRow = [r];
+      currentRowWidth = w;
+    } else {
+      currentRow.push(r);
+      currentRowWidth = nextWidth;
+    }
+  }
+  if (currentRow.length > 0) rows.push(currentRow);
+
+  // -----------------------------
+  // 2) 각 줄의 max height 계산
+  // -----------------------------
+  let rowHeights = rows.map(row => {
+    let maxH = 0;
+    for (let r of row) {
+      if (r.scaledH > maxH) maxH = r.scaledH;
+    }
+    return maxH;
+  });
+
+  // 전체 높이
+  let totalHeight =
+    rowHeights.reduce((a, b) => a + b, 0) +
+    padding * (rowHeights.length - 1);
+
+  // island 내부 세로 중앙 정렬
+  let startY = island.y + (island.h - totalHeight) / 2;
+
+  // -----------------------------
+  // 3) 줄 단위로 중앙 정렬 + 그리기
+  // -----------------------------
+
+  let y = startY;
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    let row = rows[rowIndex];
+    let maxH = rowHeights[rowIndex];
+
+    // 줄 폭 계산
+    let rowWidth = row.reduce((acc, r, idx) => {
+      return acc + r.scaledW + (idx > 0 ? padding : 0);
+    }, 0);
+
+    // 가로 가운데 정렬
+    let startX = island.x + (island.w - rowWidth) / 2;
+
+    // 그리기
+    let x = startX;
+
+    for (let r of row) {
+      let img = receiptImages[r.id];
+
+      if (img) image(img, x + r.scaledW / 2, y + maxH / 2, r.scaledW, r.scaledH);
+
+      x += r.scaledW + padding;
     }
 
-    // 이미지 그리기 (중심 정렬)
-    image(img, x + w/2, y + h/2, w, h);
-
-    x += w + padding;
+    y += maxH + padding;
   }
 }
 
