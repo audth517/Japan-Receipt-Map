@@ -182,8 +182,29 @@ function drawIslandImage(island) {
   if (!img) return;
 
   push();
-  imageMode(CORNER);  // SVG는 CORNER
-  image(img, island.x, island.y, island.w, island.h);
+  imageMode(CORNER);
+
+  let svgAspect = img.width / img.height;
+  let boxAspect = island.w / island.h;
+
+  let drawW, drawH;
+
+  if (svgAspect > boxAspect) {
+    // 가로가 더 넓음 → 가로에 맞추기
+    drawW = island.w;
+    drawH = island.w / svgAspect;
+  } else {
+    // 세로가 더 큼 → 세로에 맞추기
+    drawH = island.h;
+    drawW = island.h * svgAspect;
+  }
+
+  // 중앙 정렬
+  let offsetX = island.x + (island.w - drawW) / 2;
+  let offsetY = island.y + (island.h - drawH) / 2;
+
+  image(img, offsetX, offsetY, drawW, drawH);
+
   pop();
 }
 
