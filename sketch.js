@@ -79,17 +79,18 @@ function setupIslands() {
   islands = [];
 
   // ─ 일본 전체 박스(전도) 크기 & 위치 ─
-  const mapH = height * 0.8;      // 화면 높이의 80%
-  const mapW = mapH * 0.55;       // 세로로 긴 일본 비율
+  const mapH = height * 0.75;      // 화면 높이의 75%
+  const mapW = mapH * 0.55;        // 세로로 긴 일본 비율
   const mapX = (width - mapW) / 2;
-  const mapY = (height - mapH) / 2 + height * 0.05;  // 살짝 아래로 내려줌
+  const mapY = height * 0.20;      // 전체를 더 아래로 내림
 
   // 실제 일본 지도 느낌에 맞춘 상대 위치 (0~1)
+  // (보여준 이미지 기준으로 튜닝)
   const anchor = {
-    Hokkaido: { x: 0.75, y: 0.10, scale: 0.40 },  // 오른쪽 위
-    Honshu:   { x: 0.70, y: 0.52, scale: 1.00 },  // 중앙 세로로 긴 큰 섬
-    Shikoku:  { x: 0.55, y: 0.72, scale: 0.32 },  // 혼슈 아래 왼쪽
-    Kyushu:   { x: 0.32, y: 0.82, scale: 0.45 },  // 왼쪽 아래
+    Hokkaido: { x: 0.65, y: 0.10, scale: 0.38 },  // 오른쪽 위
+    Honshu:   { x: 0.60, y: 0.52, scale: 1.00 },  // 중앙 세로로 긴 큰 섬
+    Shikoku:  { x: 0.48, y: 0.74, scale: 0.30 },  // 혼슈 아래 왼쪽
+    Kyushu:   { x: 0.36, y: 0.86, scale: 0.42 },  // 왼쪽 아래
   };
 
   const islandNames = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
@@ -139,10 +140,13 @@ function draw() {
   background(20);
 
   if (!ready) {
+    push();
+    resetMatrix();             // 혹시 모를 translate/scale 초기화
     fill(245);
     textSize(24);
-    textAlign(CENTER, CENTER);
+    textAlign(CENTER, CENTER); // 가로/세로 모두 중앙 기준
     text(`Loading images… ${imagesLoaded}/${totalImages}`, width / 2, height / 2);
+    pop();
     return;
   }
 
