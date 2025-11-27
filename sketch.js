@@ -78,36 +78,35 @@ function windowResized() {
 function setupIslands() {
   islands = [];
 
-  // 일본 전체 크기 비율
-  const mapH = height * 0.7;
-  const mapW = mapH * 0.55; // 일본 전체 가로비율 (세로 긴 지도)
-
+  // ─ 일본 전체 박스(전도) 크기 & 위치 ─
+  const mapH = height * 0.8;      // 화면 높이의 80%
+  const mapW = mapH * 0.55;       // 세로로 긴 일본 비율
   const mapX = (width - mapW) / 2;
-  const mapY = height * 0.15;
+  const mapY = (height - mapH) / 2 + height * 0.05;  // 살짝 아래로 내려줌
 
-  // 상대 좌표 기반 anchor positions
+  // 실제 일본 지도 느낌에 맞춘 상대 위치 (0~1)
   const anchor = {
-    Hokkaido: { x: 0.20, y: 0.00, scale: 0.32 },
-    Honshu:   { x: 0.55, y: 0.25, scale: 1.00 },
-    Shikoku:  { x: 0.35, y: 0.72, scale: 0.28 },
-    Kyushu:   { x: 0.10, y: 0.65, scale: 0.40 },
+    Hokkaido: { x: 0.75, y: 0.10, scale: 0.40 },  // 오른쪽 위
+    Honshu:   { x: 0.70, y: 0.52, scale: 1.00 },  // 중앙 세로로 긴 큰 섬
+    Shikoku:  { x: 0.55, y: 0.72, scale: 0.32 },  // 혼슈 아래 왼쪽
+    Kyushu:   { x: 0.32, y: 0.82, scale: 0.45 },  // 왼쪽 아래
   };
 
-  // 섬 목록
   const islandNames = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
+
   for (let name of islandNames) {
     const a = anchor[name];
 
-    // 섬 SVG
     let img = null;
     if (name === "Hokkaido") img = imgHokkaido;
     if (name === "Honshu")   img = imgHonshu;
     if (name === "Shikoku")  img = imgShikoku;
     if (name === "Kyushu")   img = imgKyushu;
+    if (!img) continue;
 
     const aspect = img.width / img.height;
 
-    // 섬 크기 (Honshu가 기준)
+    // Honshu scale=1.0 기준으로 비율 유지
     const regionH = mapH * a.scale;
     const regionW = regionH * aspect;
 
@@ -140,8 +139,9 @@ function draw() {
   background(20);
 
   if (!ready) {
-    fill(240);
+    fill(245);
     textSize(24);
+    textAlign(CENTER, CENTER);
     text(`Loading images… ${imagesLoaded}/${totalImages}`, width / 2, height / 2);
     return;
   }
@@ -283,7 +283,7 @@ function computeIslandScaling(island) {
   let sum = 0;
   for (let r of island.receipts) sum += r.price;
 
-  island.scaleK = (island.w * island.h * 0.2) / sum;
+  island.scaleK = (island.w * island.h * 0.05) / sum;
 }
 
 function applyPriceScaling(island) {
