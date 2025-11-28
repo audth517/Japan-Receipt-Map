@@ -244,6 +244,7 @@ function drawReceiptsInCity(area, receipts, regionName, cityName) {
   placeReceiptsInMask(mask, receipts);
 
   for (let r of receipts) {
+    if (r.cityX === undefined || r.cityY === undefined) continue;
     let drawX = area.x + r.cityX + r.scaledW/2;
     let drawY = area.y + r.cityY + r.scaledH/2;
 
@@ -290,18 +291,49 @@ function createMaskGrid(area, maskImg) {
 // PLACE RECEIPTS INSIDE INTERNAL GRID
 // -----------------------------------------------------
 function placeReceiptsInMask(mask, receipts) {
+  if (!mask || mask.length === 0 || !mask[0]) return;
+
+  const gridH = mask.length;
+  const gridW = mask[0].length;
+
   let placed = [];
 
   for (let r of receipts) {
     let w = int(r.scaledW);
     let h = int(r.scaledH);
 
+    // 1) 영수증이 도시 마스크보다 큰 경우 → 강제로 축소
+    if (w >= gridW || h >= gridH) {
+      let scale = min(gridW / (w + 1), gridH / (h + 1), 0.9);
+      w = int(w * scale);
+      h = int(h * scale);
+      r.scaledW = w;
+      r.scaledH = h;
+    }
+
     let pos = findPositionForRectangle(mask, w, h, placed);
 
+    // 2) 정상 배치 실패 시 → 마스크 범위 안에서 간단 랜덤 배치 시도
+    if (!pos) {
+      // 디버깅용 로그 (한 번만 보고 싶으면 주석처리해도 됨)
+      console.warn("no exact position for receipt", r.id, " → fallback random in city");
+
+      for (let t = 0; t < 100; t++) {
+        let rx = int(random(0, gridW - w));
+        let ry = int(random(0, gridH - h));
+
+        if (!overlaps(rx, ry, w, h, placed)) {
+          pos = { x: rx, y: ry };
+          break;
+        }
+      }
+    }
+
+    // 3) 그래도 못 찾으면 그냥 패스 (이 경우는 일부만 안 보일 거야)
     if (pos) {
       r.cityX = pos.x;
       r.cityY = pos.y;
-      placed.push({x: pos.x, y: pos.y, w, h});
+      placed.push({ x: pos.x, y: pos.y, w, h });
     }
   }
 }
@@ -347,7 +379,7 @@ function computeIslandScaling(island) {
   let total = 0;
   for (let r of island.receipts) total += r.price;
 
-  island.scaleK = (island.w * island.h * 0.05) / total;
+  island.scaleK = (island.w * island.h * 0.01) / total;
 }
 
 function applyPriceScaling(island) {
