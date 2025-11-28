@@ -22,8 +22,6 @@ let currentMode = "overview";
 let focusedRegion = null;
 let focusedCity = null;
 
-const CANVAS_W = 1000;
-let CANVAS_H = 600; // 실제 값은 setup()에서 regionRectsPx 기준으로 다시 계산
 
 // -------------------------------------
 // REGION & CITY INFO
@@ -39,10 +37,10 @@ const CITIES_BY_REGION = {
 
 
 // -------------------------------------
-// ★ regionRectsPx: PNG 배치 최종 좌표 (기준 1000x?)
+// ★ regionRectsPx: PNG 배치 최종 좌표 (1000x600 기준 잡았던 값)
 // -------------------------------------
 let regionRectsPx = {
-  Hokkaido: { x: 560, y:  20, w: 260, h: 260 },
+  Hokkaido: { x: 560, y: 20,  w: 260, h: 260 },
   Honshu:   { x: 470, y: 190, w: 340, h: 360 },
   Shikoku:  { x: 520, y: 430, w: 160, h: 120 },
   Kyushu:   { x: 390, y: 430, w: 180, h: 220 }
@@ -120,24 +118,12 @@ function preload() {
 // SETUP
 // -------------------------------------
 function setup() {
-  // ★ regionRectsPx 기준으로 필요한 세로 크기 계산
-  let maxBottom = 0;
-  for (let region of REGION_NAMES) {
-    const rr = regionRectsPx[region];
-    if (!rr) continue;
-    const bottom = rr.y + rr.h;
-    if (bottom > maxBottom) maxBottom = bottom;
-  }
-  const marginBottom = 80; // 아래 여백 (툴팁/여분)
-  CANVAS_H = maxBottom + marginBottom;
-
-  createCanvas(CANVAS_W, CANVAS_H);
+  // ★★ 여기를 600 → 730으로만 수정 ★★
+  createCanvas(1000, 730);
   pixelDensity(1);
 
-  // 마스크 준비
   prepareCityMasks();
 
-  // JSON이 비동기로 올 수도 있으니 대기
   if (!jsonLoaded) {
     noLoop();
     let timer = setInterval(() => {
@@ -273,7 +259,6 @@ function processData() {
       xScreen = rr.x + (p.xImg / iw) * rr.w;
       yScreen = rr.y + (p.yImg / ih) * rr.h;
     } else {
-      // 마스크가 없으면 region rect 안에서 랜덤
       xScreen = random(rr.x, rr.x + rr.w);
       yScreen = random(rr.y, rr.y + rr.h);
     }
@@ -296,7 +281,7 @@ function processData() {
 
 
 // -------------------------------------
-// PRICE → RADIUS (log scale, 전체 0.4배 정도)
+// PRICE → RADIUS (log scale, 전체 0.4배)
 // -------------------------------------
 function priceToRadius(price) {
   const p = Math.max(1, Number(price));
@@ -305,8 +290,7 @@ function priceToRadius(price) {
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
 
-  // 이전보다 전체 0.4배 정도로 작게 (예: 5~55 → 2~22 느낌)
-  return map(logP, logMin, logMax, 1, 11);
+  return map(logP, logMin, logMax, 2, 22);
 }
 
 
@@ -333,10 +317,7 @@ function drawRegions() {
   for (let region of REGION_NAMES) {
     const img = regionImages[region];
     const rr = regionRectsPx[region];
-    if (img && rr) {
-      // imageMode 기본(CORNER): (x, y, w, h)
-      image(img, rr.x, rr.y, rr.w, rr.h);
-    }
+    if (img) image(img, rr.x, rr.y, rr.w, rr.h);
   }
 }
 
