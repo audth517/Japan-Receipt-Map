@@ -20,7 +20,6 @@ let maxPrice = 0;
 let regionImages = {};
 let cityMaskImages = {};
 let cityMaskPoints = {};
-let cityBounds = {};
 
 let currentMode = "overview";
 let focusedRegion = null;
@@ -29,15 +28,17 @@ let focusedCity = null;
 const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
-//------------------------------------------------------
-// SHIFT + SCALE 적용
-//------------------------------------------------------
-const SHIFT_X = 80;    // 🔥 전체 지도 오른쪽 이동
-const SHIFT_Y = 0;     // 🔥 필요하면 20~40 줘도 됨
-const SCALE   = 0.8;   // 🔥 전체 지도 크기 0.8배 축소
 
 //------------------------------------------------------
-// REGION RAW COORDS (퍼센트 기반 원본)
+// SHIFT + SCALE
+//------------------------------------------------------
+const SHIFT_X = 80;
+const SHIFT_Y = 0;
+const SCALE   = 0.8;
+
+
+//------------------------------------------------------
+// REGION RAW COORDS (percent)
 //------------------------------------------------------
 function rectPct(x, y, w, h) { return {x, y, w, h}; }
 
@@ -48,14 +49,18 @@ let regionRectsPct_raw = {
   Kyushu:   rectPct(0.0,  80.9, 13.9, 19.0)
 };
 
+
 //------------------------------------------------------
 // PRELOAD
 //------------------------------------------------------
 function preload() {
+
+  // region images
   for (let region of REGION_NAMES) {
     regionImages[region] = loadImage(`assets/islands/${region.toLowerCase()}.png`);
   }
 
+  // city mask images
   for (let region of REGION_NAMES) {
     cityMaskImages[region] = {};
     for (let city of CITIES_BY_REGION[region]) {
@@ -75,66 +80,66 @@ function preload() {
   );
 }
 
+
 //------------------------------------------------------
 // SETUP
 //------------------------------------------------------
+let regionRectsPx = {};
+
 function setup() {
   createCanvas(CANVAS_W, CANVAS_H);
   pixelDensity(1);
 
-  prepareRegionRects();   // 🔥 SHIFT + SCALE 적용
+  prepareRegionRects();
   prepareCityMasks();
 
   if (!jsonLoaded) {
     noLoop();
     let timer = setInterval(() => {
-      if (jsonLoaded) { clearInterval(timer); processData(); loop(); }
+      if (jsonLoaded) {
+        clearInterval(timer);
+        processData();
+        loop();
+      }
     }, 30);
   } else {
     processData();
   }
 }
 
-//------------------------------------------------------
-// (A) SHIFT + SCALE 적용한 실제 regionRectsPx 계산
-//------------------------------------------------------
-let regionRectsPx = {};
 
+//------------------------------------------------------
+// (A) regionRectsPx 계산 (SHIFT + SCALE)
+//------------------------------------------------------
 function prepareRegionRects() {
 
   for (let region of REGION_NAMES) {
 
     const P = regionRectsPct_raw[region];
 
-    const raw = {
-      x: CANVAS_W * P.x / 100,
-      y: CANVAS_H * P.y / 100,
-      w: CANVAS_W * P.w / 100,
-      h: CANVAS_H * P.h / 100
-    };
+    const rawX = CANVAS_W * P.x / 100;
+    const rawY = CANVAS_H * P.y / 100;
+    const rawW = CANVAS_W * P.w / 100;
+    const rawH = CANVAS_H * P.h / 100;
 
-    // 🔥 전체 지도 스케일 + 이동
     regionRectsPx[region] = {
-      x: raw.x * SCALE + SHIFT_X,
-      y: raw.y * SCALE + SHIFT_Y,
-      w: raw.w * SCALE,
-      h: raw.h * SCALE
+      x: rawX * SCALE + SHIFT_X,
+      y: rawY * SCALE + SHIFT_Y,
+      w: rawW * SCALE,
+      h: rawH * SCALE
     };
   }
 }
 
+
 //------------------------------------------------------
-// (B) CITY MASK PROCESSING
+// (B) City Mask Processing
 //------------------------------------------------------
 function prepareCityMasks() {
   cityMaskPoints = {};
-  cityBounds = {};
 
   for (let region of REGION_NAMES) {
     cityMaskPoints[region] = {};
-    cityBounds[region] = {};
-
-    const rr = regionRectsPx[region];
 
     for (let city of CITIES_BY_REGION[region]) {
       const img = cityMaskImages[region][city];
@@ -146,11 +151,8 @@ function prepareCityMasks() {
       let iw = img.width;
       let ih = img.height;
 
-      const cx = iw / 2;
-      const cy = ih / 2;
-
-      // 원 밖으로 튀는 것 방지: 안전 영역
-      const SAFE_MARGIN = 0.03;  
+      // 안전 마진 (섬 외곽 벗어나는 것 방지)
+      const SAFE_MARGIN = 0.03;
       const safeMinX = iw * SAFE_MARGIN;
       const safeMaxX = iw * (1 - SAFE_MARGIN);
       const safeMinY = ih * SAFE_MARGIN;
@@ -158,41 +160,41 @@ function prepareCityMasks() {
 
       for (let y = 0; y < ih; y++) {
         for (let x = 0; x < iw; x++) {
+
           let idx = 4 * (y * iw + x);
           let r = img.pixels[idx];
           let g = img.pixels[idx + 1];
           let b = img.pixels[idx + 2];
           let a = img.pixels[idx + 3];
 
+          // 🔥 mask 색을 (247,249,249) 근처로 변경
           if (
             a > 0 &&
             Math.abs(r - 247) < 12 &&
             Math.abs(g - 249) < 12 &&
             Math.abs(b - 249) < 12
           ) {
+            if (x > safeMinX && x < safeMaxX && y > safeMinY && y < safeMaxY) {
               pts.push({ xImg: x, yImg: y });
-          
-              if (x < minX) minX = x;
-              if (y < minY) minY = y;
-              if (x > maxX) maxX = x;
-              if (y > maxY) maxY = y;
+            }
           }
         }
       }
 
-      if (pts.length === 0) continue;
-
-      cityMaskPoints[region][city] = pts;
+      if (pts.length > 0) {
+        cityMaskPoints[region][city] = pts;
+      }
     }
   }
 }
 
+
 //------------------------------------------------------
-// PROCESS DATA (safe circle placement)
+// PROCESS DATA (placing circles safely inside masks)
 //------------------------------------------------------
 function processData() {
 
-  // min/max
+  // compute min/max price
   for (let r of receiptsData) {
     let p = Number(r.price);
     if (p > 0) {
@@ -214,11 +216,12 @@ function processData() {
     let xScreen, yScreen;
 
     if (pts && pts.length > 0) {
+
       const img = cityMaskImages[region][city];
       let iw = img.width;
       let ih = img.height;
 
-      // 🔥 중앙에 가까운 픽셀 우선적으로 사용 (바깥으로 튀는 것 방지)
+      // 중심성 필터 (섬 외곽 벗어나는 것 방지)
       let centerPts = pts.filter(p => {
         let dx = p.xImg - iw/2;
         let dy = p.yImg - ih/2;
@@ -239,7 +242,8 @@ function processData() {
     circles.push({
       id: r.id,
       filename: r.filename,
-      region, city,
+      region,
+      city,
       category: r.category || "Other",
       price: Number(r.price),
       x: xScreen,
@@ -249,6 +253,7 @@ function processData() {
   }
 }
 
+
 //------------------------------------------------------
 // PRICE → RADIUS
 //------------------------------------------------------
@@ -257,14 +262,16 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 2, 22); 
+  return map(logP, logMin, logMax, 2, 22);
 }
+
 
 //------------------------------------------------------
 // DRAW
 //------------------------------------------------------
 function draw() {
   background(245);
+
   drawRegions();
 
   if (currentMode === "overview") drawOverview();
@@ -273,7 +280,10 @@ function draw() {
   drawUI();
 }
 
-// draw region PNG
+
+//------------------------------------------------------
+// DRAW REGIONS
+//------------------------------------------------------
 function drawRegions() {
   for (let region of REGION_NAMES) {
     const img = regionImages[region];
