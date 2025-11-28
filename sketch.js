@@ -1,473 +1,288 @@
-// -----------------------------------------------------
-// GLOBAL VARIABLES
-// -----------------------------------------------------
-let receiptsData = [];
-let receiptImages = {};
+// -------------------------------------
+// GLOBALS
+// -------------------------------------
+let receiptsData;
+let circles = [];       // 화면에 찍힐 영수증 동그라미들
+let minPrice = Infinity;
+let maxPrice = 0;
 
-let islands = [];
-let ready = false;
-let assigned = false;
-
-let imgRegion = {};     // hokkaido / honshu / shikoku / kyushu
-let cityMasks = {};     // cityMasks[region][city]
-
-// -----------------------------------------------------
-// CITY MAP STRUCTURE
-// -----------------------------------------------------
-const CITY_MAP = {
-  hokkaido: ["chitose", "sapporo", "otaru", "hakodate"],
-  honshu:   ["tokyo", "kyoto", "osaka"],
-  shikoku:  ["ehime", "imabari", "matsuyama", "saijo"],
-  kyushu:   ["fukuoka", "ukiha"]
+// city 영역(일본 지도 위 좌표)
+// 캔버스: 1000 x 600 기준으로 대략 배치
+const cityLayouts = {
+  Hokkaido: {
+    Sapporo: { x: 300, y: 150, radius: 80 },
+    Chitose: { x: 380, y: 220, radius: 60 },
+    Hakodate: { x: 350, y: 320, radius: 60 }
+  },
+  Honshu: {
+    Tokyo: { x: 650, y: 250, radius: 90 },
+    Osaka: { x: 580, y: 350, radius: 80 },
+    Nagoya: { x: 610, y: 300, radius: 70 }
+  },
+  Shikoku: {
+    Takamatsu: { x: 540, y: 420, radius: 60 }
+  },
+  Kyushu: {
+    Fukuoka: { x: 420, y: 420, radius: 80 },
+    Kagoshima: { x: 430, y: 500, radius: 70 }
+  }
 };
 
-// -----------------------------------------------------
+// 카테고리별 색 (V2에서 확대 모드 용)
+const categoryColors = {
+  Food:   [230, 120, 120],
+  Goods:  [120, 160, 230],
+  CS:     [140, 200, 160],
+  Transport: [240, 190, 120],
+  Service:   [190, 140, 220],
+  Other:  [180, 180, 180]
+};
+
+// 상태
+let currentMode = "overview";   // "overview" | "city"
+let focusedRegion = null;
+let focusedCity = null;
+
+// -------------------------------------
 // PRELOAD
-// -----------------------------------------------------
+// -------------------------------------
 function preload() {
+  // receipts.json 로딩
+  receiptsData = loadJSON("data/receipts.json");
+}
 
-  // --- region PNG 로딩 ---
-  const regions = Object.keys(CITY_MAP);
-  for (let r of regions) {
-    imgRegion[r] = loadImage(`assets/islands/${r}.png`);
-  }
+// -------------------------------------
+// SETUP
+// -------------------------------------
+function setup() {
+  createCanvas(1000, 600);
+  processData();
+}
 
-  // --- city PNG 로딩 ---
-  for (let r of regions) {
-    cityMasks[r] = {};
+// -------------------------------------
+// DATA 처리: receipts -> circles
+// -------------------------------------
+function processData() {
+  let arr = receiptsData.receipts || receiptsData;
 
-    // region-level mask
-    cityMasks[r]["_region"] = loadImage(`assets/cities/${r}.png`);
-
-    // city-level mask
-    for (let c of CITY_MAP[r]) {
-      cityMasks[r][c] = loadImage(`assets/cities/${r}_${c}.png`);
+  // 1) price min/max 계산
+  for (let r of arr) {
+    let p = Number(r.price);
+    if (!isNaN(p)) {
+      if (p < minPrice) minPrice = p;
+      if (p > maxPrice) maxPrice = p;
     }
   }
-
-  // --- receipts data ---
-  receiptsData = loadJSON("data/receipts.json?v=" + Date.now());
-}
-
-// -----------------------------------------------------
-// SETUP
-// -----------------------------------------------------
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  imageMode(CENTER);
-
-  if (!Array.isArray(receiptsData)) {
-    receiptsData = Object.values(receiptsData);
+  if (!isFinite(minPrice) || !isFinite(maxPrice)) {
+    minPrice = 100;
+    maxPrice = 10000;
   }
 
-  // 이미지 로딩
-  let loadedCount = 0;
-  let totalImages = receiptsData.length;
+  // 2) 각각의 receipt를 city 영역 안에 랜덤 위치로 배치
+  for (let r of arr) {
+    let region = r.region;
+    let city = r.city;
 
-  for (let r of receiptsData) {
-    let path = "assets/receipts/" + r.filename;
+    if (!cityLayouts[region] || !cityLayouts[region][city]) {
+      // 정의 안 된 도시면 일단 스킵 (필요하면 console로 찍어서 보정)
+      console.warn("No layout defined for:", region, city);
+      continue;
+    }
 
-    receiptImages[r.id] = loadImage(
-      path,
-      () => {
-        loadedCount++;
-        if (loadedCount === totalImages) {
-          ready = true;
-        }
-      },
-      () => console.error("Failed to load:", path)
-    );
-  }
+    let layout = cityLayouts[region][city];
+    let pos = randomPointInCircle(layout.x, layout.y, layout.radius);
+    let radius = priceToRadius(r.price);
 
-  setupIslands();
-  assignReceiptsByCity();
-}
-
-// -----------------------------------------------------
-// WINDOW RESIZE
-// -----------------------------------------------------
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  setupIslands();
-  assignReceiptsByCity();
-}
-
-// -----------------------------------------------------
-// ISLAND LAYOUT
-// -----------------------------------------------------
-function setupIslands() {
-  islands = [];
-
-  const mapH = height * 1.10;
-  const mapW = mapH * 0.43;
-  const mapX = (width - mapW) / 2;
-  const mapY = height * (-0.05);
-
-  const baseH = mapH * 0.55;
-
-  const defs = {
-    honshu:   { dx: 0.47, dy: 0.54, hRatio: 0.7 },
-    hokkaido: { dx: 0.90, dy: 0.25, hRatio: 0.364 },
-    shikoku:  { dx: 0.26, dy: 0.74, hRatio: 0.161 },
-    kyushu:   { dx: 0.01, dy: 0.79, hRatio: 0.259 }
-  };
-
-  const order = ["honshu", "hokkaido", "shikoku", "kyushu"];
-
-  for (let name of order) {
-    let img = imgRegion[name];
-    if (!img) continue;
-
-    const d = defs[name];
-
-    const h = baseH * d.hRatio;
-    const w = h * (img.width / img.height);
-
-    const cx = mapX + mapW * d.dx;
-    const cy = mapY + mapH * d.dy;
-
-    islands.push({
-      name,
-      x: cx - w/2,
-      y: cy - h/2,
-      w,
-      h,
-      receipts: [],
-      cities: {}
+    circles.push({
+      id: r.id,
+      region: region,
+      city: city,
+      category: r.category || "Other",
+      price: Number(r.price),
+      x: pos.x,
+      y: pos.y,
+      radius: radius,
+      raw: r  // 나중에 상세 정보 쓸 때 사용
     });
   }
 }
 
-// -----------------------------------------------------
-// ASSIGN RECEIPTS INTO ISLAND & CITY
-// -----------------------------------------------------
-function assignReceiptsByCity() {
-  for (let isl of islands) {
-    isl.receipts = [];
-    isl.cities = {};
-  }
-
-  for (let r of receiptsData) {
-    let region = r.region.toLowerCase();
-    let island = islands.find(i => i.name === region);
-    if (!island) continue;
-
-    island.receipts.push(r);
-
-    let city = r.city.toLowerCase();
-    if (!island.cities[city]) island.cities[city] = [];
-    island.cities[city].push(r);
-  }
+// 가격 → 원 크기
+function priceToRadius(price) {
+  let p = Number(price);
+  if (isNaN(p)) p = minPrice;
+  if (maxPrice === minPrice) return 12;
+  return map(p, minPrice, maxPrice, 6, 28);
 }
 
-// -----------------------------------------------------
+// 원 안 랜덤 좌표
+function randomPointInCircle(cx, cy, r) {
+  let angle = random(TWO_PI);
+  // 균등 분포를 위해 sqrt 사용
+  let distRadius = r * sqrt(random());
+  let x = cx + cos(angle) * distRadius;
+  let y = cy + sin(angle) * distRadius;
+  return { x, y };
+}
+
+// -------------------------------------
 // DRAW
-// -----------------------------------------------------
+// -------------------------------------
 function draw() {
-  background(20);
+  background(245);
 
-  if (!ready) {
-    push();
-    textAlign(CENTER, CENTER);
-    fill(245);
-    textSize(24);
-    text("Loading receipts...", width/2, height/2);
-    pop();
-    return;
+  // 약하게 "일본 실루엣" 역할을 하는 city 영역 뒷배경 (debug 겸)
+  drawCityAreasBase();
+
+  if (currentMode === "overview") {
+    drawOverview();
+  } else if (currentMode === "city") {
+    drawCityFocus();
   }
 
-  if (!assigned) {
-    for (let isl of islands) {
-      computeIslandScaling(isl);
-      applyPriceScaling(isl);
-      computeCityLayouts(isl);
-    }
-    assigned = true;
-  }
+  drawUI();
+}
 
-  // region image + city borders
-  for (let isl of islands) {
-    drawIslandImage(isl);
-  }
+// city 영역을 살짝 보여주는 (지금은 debug용) 원들
+function drawCityAreasBase() {
+  noFill();
+  stroke(220);
+  strokeWeight(1);
 
-  // city-level receipt drawing
-  for (let isl of islands) {
-    let region = isl.name;
-
-    for (let city in isl.cityAreas) {
-      let area = isl.cityAreas[city];
-      let receipts = isl.cities[city];
-      drawReceiptsInCity(area, receipts, region, city);
+  for (let region in cityLayouts) {
+    for (let city in cityLayouts[region]) {
+      let c = cityLayouts[region][city];
+      ellipse(c.x, c.y, c.radius * 2, c.radius * 2);
     }
   }
 }
 
-// -----------------------------------------------------
-// DRAW REGION IMAGE
-// -----------------------------------------------------
-function drawIslandImage(island) {
-  let img = imgRegion[island.name];
-  if (!img) return;
+// OVERVIEW 모드: 모든 영수증 원 = 흰색
+function drawOverview() {
+  noStroke();
+  let hoverIndex = getHoverCircleIndex();
 
-  push();
-  imageMode(CORNER);
+  for (let i = 0; i < circles.length; i++) {
+    let c = circles[i];
 
-  let aspect = img.width / img.height;
-  let boxAspect = island.w / island.h;
-
-  let w, h;
-  if (aspect > boxAspect) {
-    w = island.w;
-    h = island.w / aspect;
-  } else {
-    h = island.h;
-    w = island.h * aspect;
-  }
-
-  let x = island.x + (island.w - w)/2;
-  let y = island.y + (island.h - h)/2;
-
-  image(img, x, y, w, h);
-  pop();
-}
-
-// -----------------------------------------------------
-// DRAW RECEIPTS INSIDE CITY MASK
-// -----------------------------------------------------
-function drawReceiptsInCity(area, receipts, regionName, cityName) {
-  if (!receipts || receipts.length === 0) return;
-
-  let maskImg = cityMasks[regionName][cityName];
-  if (!maskImg) return;
-
-  let mask = createMaskGrid(area, maskImg);
-  placeReceiptsInMask(mask, receipts);
-
-  for (let r of receipts) {
-    if (r.cityX === undefined || r.cityY === undefined) continue;
-    let drawX = area.x + r.cityX + r.scaledW/2;
-    let drawY = area.y + r.cityY + r.scaledH/2;
-
-    image(receiptImages[r.id], drawX, drawY, r.scaledW, r.scaledH);
-  }
-}
-
-// -----------------------------------------------------
-// CREATE MASK GRID (city PNG 기반)
-// -----------------------------------------------------
-function createMaskGrid(area, maskImg) {
-  let grid = [];
-
-  maskImg.loadPixels();
-
-  const mb = area.maskBounds; // minX, minY, maxX, maxY
-  const boxW = mb.maxX - mb.minX + 1;
-  const boxH = mb.maxY - mb.minY + 1;
-
-  const gridW = int(area.w);   // 캔버스 상 도시 박스 픽셀 폭
-  const gridH = int(area.h);   // 캔버스 상 도시 박스 픽셀 높이
-
-  for (let y = 0; y < gridH; y++) {
-    grid[y] = [];
-    // 마스크 Y 좌표로 매핑
-    let my = int(mb.minY + (y / gridH) * boxH);
-    my = constrain(my, 0, maskImg.height - 1);
-
-    for (let x = 0; x < gridW; x++) {
-      // 마스크 X 좌표로 매핑
-      let mx = int(mb.minX + (x / gridW) * boxW);
-      mx = constrain(mx, 0, maskImg.width - 1);
-
-      let idx = (my * maskImg.width + mx) * 4;
-      let alpha = maskImg.pixels[idx + 3];
-
-      grid[y][x] = alpha > 10;
-    }
-  }
-  return grid;
-}
-
-// -----------------------------------------------------
-// PLACE RECEIPTS INSIDE INTERNAL GRID
-// -----------------------------------------------------
-function placeReceiptsInMask(mask, receipts) {
-  if (!mask || mask.length === 0 || !mask[0]) return;
-
-  const gridH = mask.length;
-  const gridW = mask[0].length;
-
-  let placed = [];
-
-  for (let r of receipts) {
-    let w = int(r.scaledW);
-    let h = int(r.scaledH);
-
-    // 1) 영수증이 도시 마스크보다 큰 경우 → 강제로 축소
-    if (w >= gridW || h >= gridH) {
-      let scale = min(gridW / (w + 1), gridH / (h + 1), 0.9);
-      w = int(w * scale);
-      h = int(h * scale);
-      r.scaledW = w;
-      r.scaledH = h;
+    if (i === hoverIndex) {
+      fill(255);
+      stroke(0);
+      strokeWeight(2);
+    } else {
+      noStroke();
+      fill(255);
     }
 
-    let pos = findPositionForRectangle(mask, w, h, placed);
+    ellipse(c.x, c.y, c.radius * 2, c.radius * 2);
+  }
 
-    // 2) 정상 배치 실패 시 → 마스크 범위 안에서 간단 랜덤 배치 시도
-    if (!pos) {
-      // 디버깅용 로그 (한 번만 보고 싶으면 주석처리해도 됨)
-      console.warn("no exact position for receipt", r.id, " → fallback random in city");
-
-      for (let t = 0; t < 100; t++) {
-        let rx = int(random(0, gridW - w));
-        let ry = int(random(0, gridH - h));
-
-        if (!overlaps(rx, ry, w, h, placed)) {
-          pos = { x: rx, y: ry };
-          break;
-        }
-      }
-    }
-
-    // 3) 그래도 못 찾으면 그냥 패스 (이 경우는 일부만 안 보일 거야)
-    if (pos) {
-      r.cityX = pos.x;
-      r.cityY = pos.y;
-      placed.push({ x: pos.x, y: pos.y, w, h });
-    }
+  if (hoverIndex !== -1) {
+    let c = circles[hoverIndex];
+    fill(0);
+    noStroke();
+    textAlign(LEFT, BOTTOM);
+    textSize(14);
+    text(`${c.region} / ${c.city}\n${c.id} (${c.price}¥)`, 20, height - 20);
   }
 }
 
-// -----------------------------------------------------
-function findPositionForRectangle(mask, w, h, placed) {
-  for (let y = 0; y < mask.length - h; y++) {
-    for (let x = 0; x < mask[0].length - w; x++) {
+// CITY focus 모드: 해당 city만 컬러, 나머지는 흐리게
+function drawCityFocus() {
+  let hoverIndex = getHoverCircleIndex();
 
-      if (!fitsMask(mask, x, y, w, h)) continue;
-      if (overlaps(x, y, w, h, placed)) continue;
+  // 1) 전체 dim 처리
+  noStroke();
+  for (let c of circles) {
+    let isFocusedCity =
+      c.region === focusedRegion && c.city === focusedCity;
 
-      return {x, y};
-    }
-  }
-  return null;
-}
-
-function fitsMask(mask, x, y, w, h) {
-  for (let j = 0; j < h; j++) {
-    for (let i = 0; i < w; i++) {
-      if (!mask[y+j][x+i]) return false;
-    }
-  }
-  return true;
-}
-
-function overlaps(x, y, w, h, placed) {
-  for (let p of placed) {
-    if (x < p.x + p.w &&
-        x + w > p.x &&
-        y < p.y + p.h &&
-        y + h > p.y)
-      return true;
-  }
-  return false;
-}
-
-// -----------------------------------------------------
-// PRICE SCALING
-// -----------------------------------------------------
-function computeIslandScaling(island) {
-  let total = 0;
-  for (let r of island.receipts) total += r.price;
-
-  island.scaleK = (island.w * island.h * 0.01) / total;
-}
-
-function applyPriceScaling(island) {
-  for (let r of island.receipts) {
-    let aspect = r.width / r.height;
-    let area = r.price * island.scaleK;
-
-    let h = sqrt(area / aspect);
-    let w = h * aspect;
-
-    r.scaledW = w;
-    r.scaledH = h;
-  }
-}
-
-// -----------------------------------------------------
-// CITY LAYOUT BOXES
-// -----------------------------------------------------
-function computeCityLayouts(island) {
-  const regionName = island.name; // "hokkaido", "honshu", ...
-
-  const maskRegionImg = cityMasks[regionName]["_region"];
-  if (!maskRegionImg) return;
-
-  // 섬 이미지와 마스크 이미지의 해상도가 같다고 가정
-  const imgW = maskRegionImg.width;
-  const imgH = maskRegionImg.height;
-
-  // 섬이 캔버스에서 차지하는 영역 → 이미지 픽셀 좌표와의 스케일링
-  const scaleX = island.w / imgW;
-  const scaleY = island.h / imgH;
-
-  island.cityAreas = {};
-
-  // 이 섬에 실제로 존재하는 city들만 처리
-  const cities = Object.keys(island.cities);
-
-  for (let city of cities) {
-    const maskImg = cityMasks[regionName][city];
-    if (!maskImg) continue;
-
-    maskImg.loadPixels();
-
-    let minX = maskImg.width;
-    let minY = maskImg.height;
-    let maxX = -1;
-    let maxY = -1;
-
-    // 마스크 이미지 전체에서 알파 있는 부분의 바운딩 박스 찾기
-    for (let y = 0; y < maskImg.height; y++) {
-      for (let x = 0; x < maskImg.width; x++) {
-        const idx = (y * maskImg.width + x) * 4;
-        const alpha = maskImg.pixels[idx + 3];
-
-        if (alpha > 10) {
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        }
-      }
+    if (isFocusedCity) {
+      // city의 원은 category 색
+      let col = categoryColors[c.category] || categoryColors.Other;
+      fill(col[0], col[1], col[2], 230);
+    } else {
+      // 나머지는 흐리게
+      fill(255, 80);
     }
 
-    // 해당 city 마스크에 아무 픽셀도 없으면 패스
-    if (maxX < minX || maxY < minY) continue;
+    ellipse(c.x, c.y, c.radius * 2, c.radius * 2);
+  }
 
-    // 마스크 좌표 → 캔버스 좌표로 변환
-    const boxW = maxX - minX + 1;
-    const boxH = maxY - minY + 1;
+  // 2) city 영역 강조
+  if (focusedRegion && focusedCity &&
+      cityLayouts[focusedRegion] &&
+      cityLayouts[focusedRegion][focusedCity]) {
+    let layout = cityLayouts[focusedRegion][focusedCity];
+    noFill();
+    stroke(0, 80);
+    strokeWeight(2);
+    ellipse(layout.x, layout.y, layout.radius * 2.3, layout.radius * 2.3);
+  }
 
-    const areaX = island.x + minX * scaleX;
-    const areaY = island.y + minY * scaleY;
-    const areaW = boxW * scaleX;
-    const areaH = boxH * scaleY;
+  // 3) hover 정보 (focus 상태에서도)
+  if (hoverIndex !== -1) {
+    let c = circles[hoverIndex];
+    fill(0);
+    noStroke();
+    textAlign(LEFT, BOTTOM);
+    textSize(14);
+    text(`${c.region} / ${c.city}\n${c.id} (${c.price}¥)`, 20, height - 20);
+  }
+}
 
-    island.cityAreas[city] = {
-      x: areaX,
-      y: areaY,
-      w: areaW,
-      h: areaH,
+// 공통 UI (왼쪽 위 제목, city focus 텍스트 등)
+function drawUI() {
+  fill(0);
+  noStroke();
+  textAlign(LEFT, TOP);
+  textSize(18);
+  text("Japan Receipts – Circle Map (V1)", 20, 20);
 
-      // 나중에 마스크 샘플링할 때 다시 쓰기 위해 원본 마스크 좌표도 저장
-      maskBounds: {
-        minX,
-        minY,
-        maxX,
-        maxY
-      }
-    };
+  textSize(14);
+  if (currentMode === "overview") {
+    text("Click a circle to focus on that city.", 20, 46);
+  } else if (currentMode === "city") {
+    text(
+      `Focused: ${focusedRegion} / ${focusedCity}  (click background to go back)`,
+      20,
+      46
+    );
+  }
+}
+
+// -------------------------------------
+// INTERACTION
+// -------------------------------------
+
+// 마우스가 올라간 circle index
+function getHoverCircleIndex() {
+  let hoverIndex = -1;
+  for (let i = 0; i < circles.length; i++) {
+    let c = circles[i];
+    let d = dist(mouseX, mouseY, c.x, c.y);
+    if (d < c.radius) {
+      hoverIndex = i;
+      break;
+    }
+  }
+  return hoverIndex;
+}
+
+function mousePressed() {
+  if (currentMode === "overview") {
+    let idx = getHoverCircleIndex();
+    if (idx !== -1) {
+      // 해당 circle의 region/city로 focus
+      let c = circles[idx];
+      focusedRegion = c.region;
+      focusedCity = c.city;
+      currentMode = "city";
+    }
+  } else if (currentMode === "city") {
+    // city 모드에서 아무데나 클릭하면 overview로 복귀
+    currentMode = "overview";
+    focusedRegion = null;
+    focusedCity = null;
   }
 }
