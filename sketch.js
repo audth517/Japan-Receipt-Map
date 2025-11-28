@@ -256,21 +256,31 @@ function drawReceiptsInCity(area, receipts, regionName, cityName) {
 // -----------------------------------------------------
 function createMaskGrid(area, maskImg) {
   let grid = [];
+
   maskImg.loadPixels();
 
-  for (let y = 0; y < area.h; y++) {
+  const mb = area.maskBounds; // minX, minY, maxX, maxY
+  const boxW = mb.maxX - mb.minX + 1;
+  const boxH = mb.maxY - mb.minY + 1;
+
+  const gridW = int(area.w);   // 캔버스 상 도시 박스 픽셀 폭
+  const gridH = int(area.h);   // 캔버스 상 도시 박스 픽셀 높이
+
+  for (let y = 0; y < gridH; y++) {
     grid[y] = [];
+    // 마스크 Y 좌표로 매핑
+    let my = int(mb.minY + (y / gridH) * boxH);
+    my = constrain(my, 0, maskImg.height - 1);
 
-    for (let x = 0; x < area.w; x++) {
-
-      // PNG 해상도가 region과 동일 → 좌표 그대로 사용
-      let mx = int(area.x + x);
-      let my = int(area.y + y);
+    for (let x = 0; x < gridW; x++) {
+      // 마스크 X 좌표로 매핑
+      let mx = int(mb.minX + (x / gridW) * boxW);
+      mx = constrain(mx, 0, maskImg.width - 1);
 
       let idx = (my * maskImg.width + mx) * 4;
       let alpha = maskImg.pixels[idx + 3];
 
-      grid[y][x] = alpha > 10;   // shape 내부만 true
+      grid[y][x] = alpha > 10;
     }
   }
   return grid;
