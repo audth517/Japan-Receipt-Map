@@ -14,21 +14,25 @@ let maxPrice = 0;
 //
 const cityLayouts = {
   Hokkaido: {
-    Sapporo: { x: 300, y: 150, radius: 80 },
-    Chitose: { x: 380, y: 220, radius: 60 },
-    Hakodate: { x: 350, y: 320, radius: 60 }
+    Chitose:   { x: 360, y: 220, radius: 55 },
+    Kamikawa:  { x: 340, y: 160, radius: 70 },
+    Otaru:     { x: 320, y: 200, radius: 55 },
+    Hakodate:  { x: 360, y: 315, radius: 60 }
   },
   Honshu: {
-    Tokyo: { x: 650, y: 250, radius: 90 },
-    Osaka: { x: 580, y: 350, radius: 80 },
-    Nagoya: { x: 610, y: 300, radius: 70 }
+    Tokyo:     { x: 680, y: 260, radius: 85 },
+    Osaka:     { x: 610, y: 350, radius: 80 },
+    Kyoto:     { x: 610, y: 310, radius: 65 }
   },
   Shikoku: {
-    Takamatsu: { x: 540, y: 420, radius: 60 }
+    Matsuyama: { x: 520, y: 420, radius: 70 },
+    Ehime:     { x: 520, y: 450, radius: 65 },
+    Imabari:   { x: 565, y: 400, radius: 65 },
+    Saijo:     { x: 565, y: 450, radius: 60 }
   },
   Kyushu: {
-    Fukuoka: { x: 420, y: 420, radius: 80 },
-    Kagoshima: { x: 430, y: 500, radius: 70 }
+    Fukuoka:   { x: 420, y: 440, radius: 75 },
+    Ukiha:     { x: 450, y: 480, radius: 60 }
   }
 };
 
