@@ -26,6 +26,7 @@ const categoryColors = {
   RC: [230, 120, 120],   // Restaurant & Café
   CS: [140, 200, 160],   // Convenience Store
   GS: [240, 190, 120],   // Goods Shop
+  Other: [180, 180, 180]
 };
 
 const categoryLabels = {
@@ -82,7 +83,7 @@ function preload() {
     cityMaskImages[region] = {};
     const cities = CITIES_BY_REGION[region];
     for (let city of cities) {
-      const path = `assets/islands/${region.toLowerCase()}_${city.toLowerCase()}.png`;
+      const path = `assets/cities/${region.toLowerCase()}_${city.toLowerCase()}.png`;
       cityMaskImages[region][city] = loadImage(path);
     }
   }
