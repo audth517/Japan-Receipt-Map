@@ -21,12 +21,11 @@ let regionRectsPx = {};
 
 // 카테고리 색 (focus 모드에서 사용)
 const categoryColors = {
-  Food: [230, 120, 120],
-  Goods: [120, 160, 230],
-  CS: [140, 200, 160],
-  Transport: [240, 190, 120],
-  Service: [190, 140, 220],
-  Other: [180, 180, 180]
+  TP: [120, 160, 230],   // Transportation
+  TR: [190, 140, 220],   // Tourism
+  RC: [230, 120, 120],   // Restaurant & Café
+  CS: [140, 200, 160],   // Convenience Store
+  GS: [240, 190, 120],   // Goods Shop
 };
 
 // 상태
