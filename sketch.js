@@ -56,6 +56,22 @@ function preload() {
 // -------------------------------------
 function setup() {
   createCanvas(1000, 600);
+
+  // safari 대응
+  if (!jsonLoaded) {
+    console.warn("JSON not loaded yet. Safari may delay preload().");
+    noLoop();
+    let interval = setInterval(() => {
+      if (jsonLoaded) {
+        console.log("JSON arrived (Safari fix). Continue.");
+        clearInterval(interval);
+        processData();
+        loop();
+      }
+    }, 30);
+    return;
+  }
+  
   processData();
 }
 
