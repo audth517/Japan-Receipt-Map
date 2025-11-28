@@ -170,14 +170,21 @@ function draw() {
   for (let isl of islands) {
     if (!isl.cityAreas) continue;
 
+    let islandImg;
+    if (isl.name === "Hokkaido") islandImg = imgHokkaido;
+    if (isl.name === "Honshu")   islandImg = imgHonshu;
+    if (isl.name === "Shikoku")  islandImg = imgShikoku;
+    if (isl.name === "Kyushu")   islandImg = imgKyushu;
+  
     for (let city in isl.cityAreas) {
       let area = isl.cityAreas[city];
       let receipts = isl.cities[city];
-      drawReceiptsInCity(area, receipts);
+  
+      drawReceiptsInCity(area, receipts, isl, islandImg);
     }
   }
 }
-
+  
 // 섬 이미지 그리기 ---------------------------------------- 
 function drawIslandImage(island) {
   let img;
@@ -237,71 +244,23 @@ function drawCityAreas(island) {
 }
 
 // 도시별 영수증 배치하기 ---------------------------------------- 
-function drawReceiptsInCity(area, receipts) {
+function drawReceiptsInCity(area, receipts, island, islandImg) {
   if (receipts.length === 0) return;
 
-  const padding = 10;
-  const maxWidth = area.w - padding * 2;
-  let maxReceiptW = 0;
-  let maxReceiptH = 0;
+  // 1) 도시 mask 만들기
+  let mask = createCityMask(island, area, islandImg);
+
+  // 2) mask 기반으로 영수증 배치 좌표 계산
+  placeReceiptsInMask(mask, receipts);
+
+  // 3) 실제 화면에 그리기
   for (let r of receipts) {
-    maxReceiptW = max(maxReceiptW, r.scaledW);
-    maxReceiptH = max(maxReceiptH, r.scaledH);
-  }
+    if (!receiptImages[r.id]) continue;
 
-  let targetW = area.w * 0.90;  
-  let targetH = area.h * 0.80;  
+    let drawX = area.x + r.cityX + r.scaledW / 2;
+    let drawY = area.y + r.cityY + r.scaledH / 2;
 
-  let scaleFactor = min(targetW / maxReceiptW, targetH / maxReceiptH, 1);
-
-  if (scaleFactor < 1) {
-    for (let r of receipts) {
-      r.scaledW *= scaleFactor;
-      r.scaledH *= scaleFactor;
-    }
-  }
-  
-  let rows = [];
-  let currentRow = [];
-  let currentWidth = 0;
-
-  for (let r of receipts) {
-    let w = r.scaledW;
-    let nextWidth = currentWidth + w + (currentRow.length ? padding : 0);
-
-    if (nextWidth > maxWidth) {
-      rows.push(currentRow);
-      currentRow = [r];
-      currentWidth = w;
-    } else {
-      currentRow.push(r);
-      currentWidth = nextWidth;
-    }
-  }
-  if (currentRow.length) rows.push(currentRow);
-
-  let rowHeights = rows.map(row => row.reduce((m, r) => max(m, r.scaledH), 0));
-  let totalHeight =
-    rowHeights.reduce((a, b) => a + b, 0) + padding * (rowHeights.length - 1);
-
-  let y = area.y + (area.h - totalHeight) / 2;
-
-  for (let i = 0; i < rows.length; i++) {
-    let row = rows[i];
-    let maxH = rowHeights[i];
-    let rowWidth = row.reduce(
-      (acc, r, idx) => acc + r.scaledW + (idx ? padding : 0),
-      0
-    );
-
-    let x = area.x + (area.w - rowWidth) / 2;
-
-    for (let r of row) {
-      let img = receiptImages[r.id];
-      if (img) image(img, x + r.scaledW / 2, y + maxH / 2, r.scaledW, r.scaledH);
-      x += r.scaledW + padding;
-    }
-    y += maxH + padding;
+    image(receiptImages[r.id], drawX, drawY, r.scaledW, r.scaledH);
   }
 }
 
@@ -351,4 +310,94 @@ function computeCityLayouts(island) {
       h: cityH
     };
   }
+}
+
+// -----------------------------------------------------
+// CITY MASK 생성 (섬 PNG 픽셀 기반)
+// -----------------------------------------------------
+
+function createCityMask(island, area, islandImg) {
+  let mask = [];
+
+  for (let y = 0; y < area.h; y++) {
+    mask[y] = [];
+
+    for (let x = 0; x < area.w; x++) {
+      // 캔버스 상의 실제 좌표
+      let px = int(area.x + x);
+      let py = int(area.y + y);
+
+      if (px < 0 || py < 0 || px >= width || py >= height) {
+        mask[y][x] = false;
+        continue;
+      }
+
+      // ★ 캔버스에서 픽셀을 읽어온다 (섬은 이미 그려져 있음)
+      let c = get(px, py);   // RGBA
+
+      // 알파 / 밝기 기준으로 섬 영역 판정
+      // PNG에 투명 배경이면 c[3] > 10이면 섬이라고 보면 됨
+      mask[y][x] = (c[3] > 10);
+    }
+  }
+
+  return mask;
+}
+
+// -----------------------------------------------------
+// 도시 모양(mask) 안에서 영수증 배치
+// -----------------------------------------------------
+function placeReceiptsInMask(mask, receipts) {
+  const placed = [];
+
+  for (let r of receipts) {
+    let w = int(r.scaledW);
+    let h = int(r.scaledH);
+
+    let pos = findPositionForRectangle(mask, w, h, placed);
+
+    if (pos) {
+      r.cityX = pos.x;  // 지역 내부 x
+      r.cityY = pos.y;  // 지역 내부 y
+      placed.push({x: pos.x, y: pos.y, w, h});
+    }
+  }
+}
+
+function findPositionForRectangle(mask, w, h, placed) {
+  for (let y = 0; y < mask.length - h; y++) {
+    for (let x = 0; x < mask[0].length - w; x++) {
+
+      if (!fitsMask(mask, x, y, w, h)) continue;
+      if (overlaps(x, y, w, h, placed)) continue;
+
+      return {x, y};
+    }
+  }
+  return null;
+}
+
+function fitsMask(mask, x, y, w, h) {
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      // 범위 넘어가면 실패
+      if (y + j < 0 || y + j >= mask.length) return false;
+      if (x + i < 0 || x + i >= mask[0].length) return false;
+
+      if (!mask[y + j][x + i]) return false;
+    }
+  }
+  return true;
+}
+
+function overlaps(x, y, w, h, placed) {
+  for (let p of placed) {
+    if (
+      x < p.x + p.w &&
+      x + w > p.x &&
+      y < p.y + p.h &&
+      y + h > p.y
+    ) return true;
+  }
+  return false;
 }
