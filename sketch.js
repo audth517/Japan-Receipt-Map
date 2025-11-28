@@ -115,15 +115,34 @@ function setup() {
 function processData() {
 
   if (!receiptsData) {
-    console.error("receiptsData is undefined! JSON not loaded.");
+    console.error("receiptsData is undefined!");
     return;
   }
 
   // receipts.json의 최상단이 배열이라고 가정
   let arr = receiptsData;
 
-  if (!arr || !Array.isArray(arr)) {
-    console.error("Receipts data is not an array:", arr);
+  if (!Array.isArray(arr) && typeof arr === "object") {
+
+    // case 1: {"0": {...}, "1": {...}}
+    const keys = Object.keys(arr);
+
+    // keys가 "0", "1", "2" 이런 숫자 형태면 배열로 변환
+    if (keys.every(k => !isNaN(Number(k)))) {
+      arr = keys.map(k => arr[k]);
+      console.warn("Converted numeric-object into array (Safari fix)");
+    }
+
+    // case 2: {"default": [...]}
+    else if (arr.default && Array.isArray(arr.default)) {
+      arr = arr.default;
+      console.warn("Using arr.default as array (Safari fix)");
+    }
+  }
+
+  // 3) 최종 수비 라인
+  if (!Array.isArray(arr)) {
+    console.error("Still not an array after fix. arr =", arr);
     return;
   }
 
