@@ -12,14 +12,44 @@ let maxPrice = 0;
 let regionImages = {};
 // region → {city → p5.Image}
 let cityMaskImages = {};
-// region → {city → [{xImg, yImg}, ...]} (mask 내부 픽셀들)
+// region → {city → [{xImg, yImg}, ...]} (mask 내부 usable 픽셀)
 let cityMaskPoints = {};
-// region → {city → {x, y, w, h} } (스크린 좌표 bounding box)
+// region → {city → bounding box}
 let cityBounds = {};
-// region → {x, y, w, h} (스크린 좌표)
-let regionRectsPx = {};
 
-// 카테고리 색 (focus 모드에서 사용)
+// 상태
+let currentMode = "overview";
+let focusedRegion = null;
+let focusedCity = null;
+
+
+// -------------------------------------
+// REGION & CITY INFO
+// -------------------------------------
+const REGION_NAMES = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
+
+const CITIES_BY_REGION = {
+  Hokkaido: ["Chitose", "Kamikawa", "Otaru", "Sapporo"],
+  Honshu:   ["Tokyo", "Osaka", "Kyoto"],
+  Shikoku:  ["Ehime", "Imabari", "Matsuyama", "Saijo"],
+  Kyushu:   ["Fukuoka", "Ukiha"]
+};
+
+
+// -------------------------------------
+// ★ regionRectsPx: PNG 배치 최종 좌표 (1000x600)
+// -------------------------------------
+let regionRectsPx = {
+  Hokkaido: { x: 560, y: 20,  w: 260, h: 260 },
+  Honshu:   { x: 470, y: 190, w: 340, h: 360 },
+  Shikoku:  { x: 520, y: 430, w: 160, h: 120 },
+  Kyushu:   { x: 390, y: 430, w: 180, h: 220 }
+};
+
+
+// -------------------------------------
+// CATEGORY COLORS
+// -------------------------------------
 const categoryColors = {
   TP: [120, 160, 230],   // Transportation
   TR: [190, 140, 220],   // Tourism
@@ -38,57 +68,27 @@ const categoryLabels = {
   Other: "Other"
 };
 
-// 상태
-let currentMode = "overview"; // "overview" | "city"
-let focusedRegion = null;
-let focusedCity = null;
-
-// -------------------------------------
-// 설정 상수
-// -------------------------------------
-
-const REGION_NAMES = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
-
-const CITIES_BY_REGION = {
-  Hokkaido: ["Chitose", "Kamikawa", "Otaru", "Sapporo", "Hakodate"],
-  Honshu: ["Tokyo", "Osaka", "Kyoto"],
-  Shikoku: ["Ehime", "Imabari", "Matsuyama", "Saijo"],
-  Kyushu: ["Fukuoka", "Ukiha"]
-};
-
-// 일본 전체 지도(캔버스 기준) 비율
-const japanMapRectPct = { x: 30, y: 8, w: 105, h: 140 };
-
-// 일본 지도 내부에서 region 영역 비율
-const regionRectsPct = {
-  Hokkaido: { x: 47.5, y: 0.0,  w: 27.7, h: 27.8 },
-  Honshu:   { x: 7.1,  y: 26.9, w: 54.6, h: 55.6 },
-  Shikoku:  { x: 13.7, y: 77.2, w: 14.4, h: 11.3 },
-  Kyushu:   { x: 0.0,  y: 80.9, w: 13.9, h: 19.0 }
-};
-
 
 // -------------------------------------
 // PRELOAD
 // -------------------------------------
 function preload() {
-  // 1) region 이미지 로드
+  // region PNG
   for (let region of REGION_NAMES) {
     const path = `assets/islands/${region.toLowerCase()}.png`;
     regionImages[region] = loadImage(path);
   }
 
-  // 2) city mask 이미지 로드
+  // city mask PNG
   for (let region of REGION_NAMES) {
     cityMaskImages[region] = {};
-    const cities = CITIES_BY_REGION[region];
-    for (let city of cities) {
+    for (let city of CITIES_BY_REGION[region]) {
       const path = `assets/cities/${region.toLowerCase()}_${city.toLowerCase()}.png`;
       cityMaskImages[region][city] = loadImage(path);
     }
   }
 
-  // 3) receipts JSON 로드 (Safari 대응)
+  // receipts JSON
   const url = "data/receipts.json";
 
   receiptsData = loadJSON(
@@ -102,15 +102,13 @@ function preload() {
       console.warn("loadJSON failed, trying fetch() fallback", err);
 
       fetch(url)
-        .then((res) => res.json())
-        .then((json) => {
+        .then(r => r.json())
+        .then(json => {
           receiptsData = json;
           jsonLoaded = true;
           console.log("JSON loaded via fetch fallback:", receiptsData);
         })
-        .catch((e) => {
-          console.error("Both loadJSON and fetch failed:", e);
-        });
+        .catch(e => console.error("Both loadJSON and fetch failed:", e));
     }
   );
 }
@@ -123,27 +121,17 @@ function setup() {
   createCanvas(1000, 600);
   pixelDensity(1);
 
-  // 1) regionRectsPx 계산 (캔버스 크기 기준)
-  computeRegionRectsPx();
-
-  // 2) city mask에서 usable한 픽셀 & bounding box 계산
   prepareCityMasks();
 
-  // 3) JSON 로딩 상태에 따라 processData 실행
   if (!jsonLoaded) {
-    console.warn("JSON not loaded yet. Safari might delay preload()");
-
     noLoop();
-
-    let interval = setInterval(() => {
+    let timer = setInterval(() => {
       if (jsonLoaded) {
-        console.log("JSON arrived after delay (Safari fix). Continue.");
-        clearInterval(interval);
+        clearInterval(timer);
         processData();
         loop();
       }
     }, 30);
-
     return;
   }
 
@@ -152,29 +140,7 @@ function setup() {
 
 
 // -------------------------------------
-// regionRectsPx 계산
-// -------------------------------------
-function computeRegionRectsPx() {
-  const jm = japanMapRectPct;
-  const japanX = (jm.x / 100) * width;
-  const japanY = (jm.y / 100) * height;
-  const japanW = (jm.w / 100) * width;
-  const japanH = (jm.h / 100) * height;
-
-  for (let region of REGION_NAMES) {
-    const rp = regionRectsPct[region];
-    const rx = japanX + (rp.x / 100) * japanW;
-    const ry = japanY + (rp.y / 100) * japanH;
-    const rw = (rp.w / 100) * japanW;
-    const rh = (rp.h / 100) * japanH;
-
-    regionRectsPx[region] = { x: rx, y: ry, w: rw, h: rh };
-  }
-}
-
-
-// -------------------------------------
-// city mask에서 픽셀 포인트 & bounding box 계산
+// PREPARE CITY MASKS
 // -------------------------------------
 function prepareCityMasks() {
   cityMaskPoints = {};
@@ -187,36 +153,33 @@ function prepareCityMasks() {
     const rr = regionRectsPx[region];
     if (!rr) continue;
 
-    const cities = CITIES_BY_REGION[region];
-
-    for (let city of cities) {
+    for (let city of CITIES_BY_REGION[region]) {
       const img = cityMaskImages[region][city];
-      if (!img) {
-        console.warn("No city mask image for:", region, city);
-        continue;
-      }
+      if (!img) continue;
 
       img.loadPixels();
 
       let pts = [];
-      let minX = img.width;
-      let minY = img.height;
-      let maxX = -1;
-      let maxY = -1;
+      let minX = img.width, minY = img.height;
+      let maxX = -1, maxY = -1;
 
-      // 샘플링 step (2픽셀 간격으로 훑기 → 성능 & 충분한 밀도)
-      const step = 2;
+      const step = 1;
 
       for (let y = 0; y < img.height; y += step) {
         for (let x = 0; x < img.width; x += step) {
           let idx = 4 * (y * img.width + x);
-          let r = img.pixels[idx + 0];
+          let r = img.pixels[idx];
           let g = img.pixels[idx + 1];
           let b = img.pixels[idx + 2];
           let a = img.pixels[idx + 3];
 
-          // 도시 영역 색: #221f20 (34,31,32) 근처
-          if (a > 0) {
+          // #221F20 근처 픽셀 허용범위 확대
+          if (
+            a > 0 &&
+            Math.abs(r - 34) < 12 &&
+            Math.abs(g - 31) < 12 &&
+            Math.abs(b - 32) < 12
+          ) {
             pts.push({ xImg: x, yImg: y });
             if (x < minX) minX = x;
             if (y < minY) minY = y;
@@ -227,111 +190,74 @@ function prepareCityMasks() {
       }
 
       if (pts.length === 0) {
-        console.warn("City mask had no usable pixels:", region, city);
+        console.warn(`No city mask points for ${region}/${city}`);
         continue;
       }
 
       cityMaskPoints[region][city] = pts;
 
-      // bounding box를 스크린 좌표로 변환
       const iw = img.width;
       const ih = img.height;
 
-      const boundX = rr.x + (minX / iw) * rr.w;
-      const boundY = rr.y + (minY / ih) * rr.h;
-      const boundW = (maxX - minX) / iw * rr.w;
-      const boundH = (maxY - minY) / ih * rr.h;
+      const bx = rr.x + (minX / iw) * rr.w;
+      const by = rr.y + (minY / ih) * rr.h;
+      const bw = (maxX - minX) / iw * rr.w;
+      const bh = (maxY - minY) / ih * rr.h;
 
-      cityBounds[region][city] = {
-        x: boundX,
-        y: boundY,
-        w: boundW,
-        h: boundH
-      };
-
-      console.log(`City mask prepared: ${region}/${city}, points=${pts.length}`);
+      cityBounds[region][city] = { x: bx, y: by, w: bw, h: bh };
     }
   }
 }
 
 
 // -------------------------------------
-// 데이터 처리
+// PROCESS DATA
 // -------------------------------------
 function processData() {
-  if (!receiptsData) {
-    console.error("receiptsData is undefined!");
-    return;
+  if (!Array.isArray(receiptsData)) {
+    receiptsData = Object.keys(receiptsData)
+      .sort((a, b) => Number(a) - Number(b))
+      .map(k => receiptsData[k]);
   }
 
-  let arr = receiptsData;
+  // price range
+  minPrice = Infinity;
+  maxPrice = 0;
 
-  // Safari: {"0": {...}, "1": {...}} 형태 → 배열로 변환
-  if (!Array.isArray(arr) && typeof arr === "object") {
-    const keys = Object.keys(arr);
-
-    if (keys.every((k) => !isNaN(Number(k)))) {
-      arr = keys
-        .sort((a, b) => Number(a) - Number(b))
-        .map((k) => arr[k]);
-      console.warn("Converted numeric-object into array (Safari fix)", arr.length);
-    } else if (arr.default && Array.isArray(arr.default)) {
-      arr = arr.default;
-      console.warn("Using arr.default as array (Safari fix)", arr.length);
-    }
-  }
-
-  if (!Array.isArray(arr)) {
-    console.error("Still not an array after fix. arr =", arr);
-    return;
-  }
-
-  // 가격 min/max 계산
-  for (let r of arr) {
-    let p = Number(r.price);
-    if (!isNaN(p) && p > 0) {
+  for (let r of receiptsData) {
+    const p = Number(r.price);
+    if (p > 0) {
       if (p < minPrice) minPrice = p;
       if (p > maxPrice) maxPrice = p;
     }
   }
 
-  console.log("Price range:", minPrice, maxPrice);
-
-  // 개별 receipt → circle 배치
   circles = [];
 
-  for (let r of arr) {
+  for (let r of receiptsData) {
     const region = r.region;
     const city = r.city;
 
     const rr = regionRectsPx[region];
-    if (!rr) {
-      console.warn("No region rect for:", region);
-      continue;
-    }
+    if (!rr) continue;
 
-    const cityPts =
+    const pts =
       cityMaskPoints[region] && cityMaskPoints[region][city]
         ? cityMaskPoints[region][city]
         : null;
 
     let xScreen, yScreen;
 
-    if (cityPts && cityPts.length > 0) {
-      // city mask 내부 픽셀 하나 랜덤 선택
+    if (pts && pts.length > 0) {
       const img = cityMaskImages[region][city];
-      const rrLocal = regionRectsPx[region];
       const iw = img.width;
       const ih = img.height;
+      const idx = floor(random(pts.length));
+      const p = pts[idx];
 
-      const idx = floor(random(cityPts.length));
-      const p = cityPts[idx];
-
-      xScreen = rrLocal.x + (p.xImg / iw) * rrLocal.w;
-      yScreen = rrLocal.y + (p.yImg / ih) * rrLocal.h;
+      xScreen = rr.x + (p.xImg / iw) * rr.w;
+      yScreen = rr.y + (p.yImg / ih) * rr.h;
     } else {
-      // fallback: region rect 내부 랜덤
-      console.warn("No city mask points for:", region, city, "— using region random.");
       xScreen = random(rr.x, rr.x + rr.w);
       yScreen = random(rr.y, rr.y + rr.h);
     }
@@ -347,34 +273,23 @@ function processData() {
       price: Number(r.price),
       x: xScreen,
       y: yScreen,
-      radius,
-      raw: r
+      radius
     });
   }
-
-  console.log("Finished processData(), total circles:", circles.length);
 }
 
 
 // -------------------------------------
-// 가격 → 원 크기 (log 스케일 하나로 통일)
+// PRICE → RADIUS (log scale, 전체 0.4배)
 // -------------------------------------
 function priceToRadius(price) {
-  let p = Math.max(1, Number(price));
-
-  if (!isFinite(minPrice) || !isFinite(maxPrice) || minPrice <= 0 || maxPrice <= 0) {
-    return 10;
-  }
+  const p = Math.max(1, Number(price));
 
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  const scale = 0.4;
 
-  if (logMax === logMin) return 20;
-
-  // 최소 5px, 최대 55px 사이에서 log 비율로 매핑
-  return map(logP, logMin, logMax, 5, 55) * scale;
+  return map(logP, logMin, logMax, 2, 22);
 }
 
 
@@ -386,11 +301,9 @@ function draw() {
 
   drawRegions();
 
-  drawCityAreasBase();  // 디버그용 city bounding rect
-
   if (currentMode === "overview") {
     drawOverview();
-  } else if (currentMode === "city") {
+  } else {
     drawCityFocus();
   }
 
@@ -398,116 +311,58 @@ function draw() {
 }
 
 
-// region PNG 그리기
+// region PNG
 function drawRegions() {
   for (let region of REGION_NAMES) {
     const img = regionImages[region];
     const rr = regionRectsPx[region];
-    if (!img || !rr) continue;
-
-    // 원본 비율 유지
-    const imgRatio = img.width / img.height;
-    const targetRatio = rr.w / rr.h;
-
-    let drawW, drawH;
-
-    if (imgRatio > targetRatio) {
-      // 이미지가 더 가로로 긴 형태 → 폭을 우선
-      drawW = rr.w;
-      drawH = rr.w / imgRatio;
-    } else {
-      // 이미지가 더 세로로 긴 형태 → 높이를 우선
-      drawH = rr.h;
-      drawW = rr.h * imgRatio;
-    }
-
-    const offsetX = rr.x + (rr.w - drawW) / 2;
-    const offsetY = rr.y + (rr.h - drawH) / 2;
-
-    image(img, offsetX, offsetY, drawW, drawH);
+    if (img) image(img, rr.x, rr.y, rr.w, rr.h);
   }
 }
 
 
-// city 영역 표시 (디버그용 bounding box)
-function drawCityAreasBase() {
-  noFill();
-  stroke(220);
-  strokeWeight(1);
-
-  for (let region in cityBounds) {
-    for (let city in cityBounds[region]) {
-      const b = cityBounds[region][city];
-      rect(b.x, b.y, b.w, b.h);
-    }
-  }
-}
-
-
-// overview 모드
+// overview mode
 function drawOverview() {
   noStroke();
-  const hoverIndex = getHoverCircleIndex();
+  const hover = getHoverCircleIndex();
 
   for (let i = 0; i < circles.length; i++) {
     const c = circles[i];
 
-    if (i === hoverIndex) {
+    if (i === hover) {
       fill(255);
       stroke(0);
       strokeWeight(2);
     } else {
-      fill(255, 220);
+      fill(255, 230);
       noStroke();
     }
 
-    ellipse(c.x, c.y, c.radius * 2, c.radius * 2);
+    ellipse(c.x, c.y, c.radius * 2);
   }
 
-  if (hoverIndex !== -1) {
-    const c = circles[hoverIndex];
-    drawTooltip(c);
-  }
+  if (hover !== -1) drawTooltip(circles[hover]);
 }
 
 
-// city 모드
+// city mode
 function drawCityFocus() {
-  const hoverIndex = getHoverCircleIndex();
-
   noStroke();
-  for (let c of circles) {
-    const isFocusedCity =
-      c.region === focusedRegion && c.city === focusedCity;
+  const hover = getHoverCircleIndex();
 
-    if (isFocusedCity) {
+  for (let c of circles) {
+    const sel = (c.region === focusedRegion && c.city === focusedCity);
+
+    if (sel) {
       const col = categoryColors[c.category] || categoryColors.Other;
       fill(col[0], col[1], col[2], 230);
     } else {
-      fill(255, 60);
+      fill(255, 70);
     }
-
-    ellipse(c.x, c.y, c.radius * 2, c.radius * 2);
+    ellipse(c.x, c.y, c.radius * 2);
   }
 
-  // 선택된 city bounding 박스 강조
-  if (
-    focusedRegion &&
-    focusedCity &&
-    cityBounds[focusedRegion] &&
-    cityBounds[focusedRegion][focusedCity]
-  ) {
-    const b = cityBounds[focusedRegion][focusedCity];
-    noFill();
-    stroke(0, 120);
-    strokeWeight(2);
-    rect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
-  }
-
-  if (hoverIndex !== -1) {
-    const c = circles[hoverIndex];
-    drawTooltip(c);
-  }
+  if (hover !== -1) drawTooltip(circles[hover]);
 }
 
 
@@ -516,58 +371,54 @@ function drawTooltip(c) {
   fill(0);
   textAlign(LEFT, BOTTOM);
   textSize(14);
-  const catLabel = categoryLabels[c.category] || categoryLabels.Other;
   text(
-    `${c.region} / ${c.city}\n${c.id} (${c.price}¥)\n${catLabel}`,
+    `${c.region} / ${c.city}\n${c.id} (${c.price}¥)\n${categoryLabels[c.category]}`,
     20,
     height - 20
   );
 }
 
 
-// UI 표시
+// UI
 function drawUI() {
   fill(0);
   noStroke();
   textAlign(LEFT, TOP);
   textSize(18);
-  text("Japan Receipts – Circle Map (V2: PNG mask + log radius)", 20, 20);
+  text("Japan Receipts – Circle Map (PNG + log scale)", 20, 20);
 
   textSize(14);
-  if (currentMode === "overview") {
-    text("Click a circle to focus on that city.", 20, 46);
-  } else if (currentMode === "city") {
-    text(
-      `Focused: ${focusedRegion} / ${focusedCity}  (click background to return)`,
-      20,
-      46
-    );
-  }
+  text(
+    currentMode === "overview"
+      ? "Click a circle to focus on that city."
+      : `Focused: ${focusedRegion} / ${focusedCity} (click to return)`,
+    20,
+    46
+  );
 }
 
 
-// 마우스 hover index
+// hover index
 function getHoverCircleIndex() {
   for (let i = 0; i < circles.length; i++) {
     const c = circles[i];
-    const d = dist(mouseX, mouseY, c.x, c.y);
-    if (d < c.radius) return i;
+    if (dist(mouseX, mouseY, c.x, c.y) < c.radius) return i;
   }
   return -1;
 }
 
 
-// 클릭 처리
+// mouse
 function mousePressed() {
+  const idx = getHoverCircleIndex();
+
   if (currentMode === "overview") {
-    const idx = getHoverCircleIndex();
     if (idx !== -1) {
-      const c = circles[idx];
-      focusedRegion = c.region;
-      focusedCity = c.city;
+      focusedRegion = circles[idx].region;
+      focusedCity = circles[idx].city;
       currentMode = "city";
     }
-  } else if (currentMode === "city") {
+  } else {
     currentMode = "overview";
     focusedRegion = null;
     focusedCity = null;
