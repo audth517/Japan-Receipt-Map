@@ -1,4 +1,4 @@
-// GLOBAL VARIABLES
+// GLOBAL VARIABLES ---------------------------------------- 
 let receiptsData = [];
 let receiptImages = {};
 
@@ -12,32 +12,32 @@ let assigned = false;
 
 let imgHokkaido, imgHonshu, imgShikoku, imgKyushu;
 
-// PRELOAD
+// PRELOAD ---------------------------------------- 
 function preload() {
 
-  // 섬 SVG 파일
-  imgHokkaido = loadImage("assets/islands/japan_hokkaido.svg?v=" + Date.now());
-  imgHonshu   = loadImage("assets/islands/japan_honshu.svg?v=" + Date.now());
-  imgShikoku  = loadImage("assets/islands/japan_shikoku.svg?v=" + Date.now());
-  imgKyushu   = loadImage("assets/islands/japan_kyushu.svg?v=" + Date.now());
+  // 섬 SVG 파일 ---------------------------------------- 
+  imgHokkaido = loadImage("assets/islands/japan_hokkaido.png");
+  imgHonshu   = loadImage("assets/islands/japan_honshu.png");
+  imgShikoku  = loadImage("assets/islands/japan_shikoku.png");
+  imgKyushu   = loadImage("assets/islands/japan_kyushu.png");
 
   // JSON 로딩
   receiptsData = loadJSON("data/receipts.json?v=" + Date.now());
 }
 
-// SETUP
+// SETUP ---------------------------------------- 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   imageMode(CENTER);
 
-  // JSON이 배열이 아닐 때
+  // JSON이 배열이 아닐 때 ---------------------------------------- 
   if (!Array.isArray(receiptsData)) {
     receiptsData = Object.values(receiptsData);
   }
 
   totalImages = receiptsData.length;
 
-  // 영수증 이미지 로딩
+  // 영수증 이미지 로딩 ---------------------------------------- 
   for (let r of receiptsData) {
     let path = "assets/receipts/" + r.filename;
 
@@ -53,6 +53,11 @@ function setup() {
 
   setupIslands();
   assignReceiptsByCity();
+
+  console.log("Honshu:", imgHonshu.width, imgHonshu.height);
+  console.log("Hokkaido:", imgHokkaido.width, imgHokkaido.height);
+  console.log("Shikoku:", imgShikoku.width, imgShikoku.height);
+  console.log("Kyushu:", imgKyushu.width, imgKyushu.height);
 }
 
 
@@ -66,7 +71,7 @@ function windowResized() {
   }
 }
 
-// 섬 레이아웃 설정
+// 섬 레이아웃 설정 ---------------------------------------- 
 function setupIslands() {
   islands = [];
 
@@ -114,7 +119,7 @@ function setupIslands() {
   }
 }
 
-// 영수증을 섬과 도시별로 분류
+// 영수증을 섬과 도시별로 분류 ---------------------------------------- 
 function assignReceiptsByCity() {
 
   for (let isl of islands) {
@@ -133,7 +138,7 @@ function assignReceiptsByCity() {
   }
 }
 
-// DRAW
+// DRAW ---------------------------------------- 
 function draw() {
   background(20);
 
@@ -173,7 +178,7 @@ function draw() {
   }
 }
 
-// 섬 이미지 그리기
+// 섬 이미지 그리기 ---------------------------------------- 
 function drawIslandImage(island) {
   let img;
 
@@ -208,7 +213,7 @@ function drawIslandImage(island) {
   pop();
 }
 
-// 도시 영역 그리기
+// 도시 영역 그리기 ---------------------------------------- 
 function drawCityAreas(island) {
   if (!island.cityAreas) return;
 
@@ -231,7 +236,7 @@ function drawCityAreas(island) {
   }
 }
 
-// 도시별 영수증 배치하기
+// 도시별 영수증 배치하기 ---------------------------------------- 
 function drawReceiptsInCity(area, receipts) {
   if (receipts.length === 0) return;
 
@@ -282,7 +287,7 @@ function drawReceiptsInCity(area, receipts) {
   }
 }
 
-// 가격 기반 스케일 계산
+// 가격 기반 스케일 계산 ---------------------------------------- 
 function computeIslandScaling(island) {
   let sum = 0;
   for (let r of island.receipts) sum += r.price;
@@ -290,7 +295,7 @@ function computeIslandScaling(island) {
   island.scaleK = (island.w * island.h * 0.05) / sum;
 }
 
-// 영수증 스케일 적용
+// 영수증 스케일 적용 ---------------------------------------- 
 function applyPriceScaling(island) {
   for (let r of island.receipts) {
     let aspect = r.width / r.height;
@@ -304,7 +309,7 @@ function applyPriceScaling(island) {
   }
 }
 
-// 도시 레이아웃
+// 도시 레이아웃 ---------------------------------------- 
 function computeCityLayouts(island) {
   const cities = Object.keys(island.cities);
   const n = cities.length;
