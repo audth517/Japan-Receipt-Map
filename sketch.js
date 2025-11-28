@@ -155,10 +155,18 @@ function prepareCityMasks() {
           let b = img.pixels[idx + 2];
           let a = img.pixels[idx + 3];
 
-          if (a > 0 && Math.abs(r - 34) < 12 && Math.abs(g - 31) < 12 && Math.abs(b - 32) < 12) {
-            if (x > safeMinX && x < safeMaxX && y > safeMinY && y < safeMaxY) {
-              pts.push({xImg: x, yImg: y});
-            }
+          if (
+            a > 0 &&
+            Math.abs(r - 247) < 12 &&
+            Math.abs(g - 249) < 12 &&
+            Math.abs(b - 249) < 12
+          ) {
+              pts.push({ xImg: x, yImg: y });
+          
+              if (x < minX) minX = x;
+              if (y < minY) minY = y;
+              if (x > maxX) maxX = x;
+              if (y > maxY) maxY = y;
           }
         }
       }
