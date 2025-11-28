@@ -57,7 +57,7 @@ const CITIES_BY_REGION = {
 };
 
 // 일본 전체 지도(캔버스 기준) 비율
-const japanMapRectPct = { x: 0.0, y: 0.0, w: 75.26, h: 100.0 };
+const japanMapRectPct = { x: 30, y: 8, w: 105, h: 140 };
 
 // 일본 지도 내부에서 region 영역 비율
 const regionRectsPct = {
@@ -369,11 +369,12 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
+  const scale = 0.4;
 
   if (logMax === logMin) return 20;
 
   // 최소 5px, 최대 55px 사이에서 log 비율로 매핑
-  return map(logP, logMin, logMax, 5, 55);
+  return map(logP, logMin, logMax, 5, 55) * scale;
 }
 
 
@@ -404,7 +405,26 @@ function drawRegions() {
     const rr = regionRectsPx[region];
     if (!img || !rr) continue;
 
-    image(img, rr.x, rr.y, rr.w, rr.h);
+    // 원본 비율 유지
+    const imgRatio = img.width / img.height;
+    const targetRatio = rr.w / rr.h;
+
+    let drawW, drawH;
+
+    if (imgRatio > targetRatio) {
+      // 이미지가 더 가로로 긴 형태 → 폭을 우선
+      drawW = rr.w;
+      drawH = rr.w / imgRatio;
+    } else {
+      // 이미지가 더 세로로 긴 형태 → 높이를 우선
+      drawH = rr.h;
+      drawW = rr.h * imgRatio;
+    }
+
+    const offsetX = rr.x + (rr.w - drawW) / 2;
+    const offsetY = rr.y + (rr.h - drawH) / 2;
+
+    image(img, offsetX, offsetY, drawW, drawH);
   }
 }
 
