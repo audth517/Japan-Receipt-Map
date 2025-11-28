@@ -194,12 +194,8 @@ function processData() {
 
 // 가격 → 원 크기
 function priceToRadius(price) {
-  let p = Math.max(1, Number(price));  // 0 방지
-  // log 스케일 적용
-  let logMin = Math.log(minPrice);
-  let logMax = Math.log(maxPrice);
-  let logP = Math.log(p);
-  return map(logP, logMin, logMax, 8, 60); 
+  let p = Number(price);
+  return max(2, p / 200);   // scale factor = 200
 }
 
 
