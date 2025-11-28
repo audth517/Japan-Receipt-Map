@@ -64,7 +64,13 @@ function setup() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  setupIslands();
+  setupIslands();      // 섬 위치 재계산
+  assignReceiptsByCity();  // 도시 분류 다시 수행
+
+  // 도시 레이아웃도 다시 계산해야 함
+  for (let isl of islands) {
+    computeCityLayouts(isl);
+  }
 }
 
 function setupIslands() {
