@@ -188,7 +188,6 @@ function draw() {
   // region image + city borders
   for (let isl of islands) {
     drawIslandImage(isl);
-    drawCityAreas(isl);
   }
 
   // city-level receipt drawing
@@ -230,32 +229,6 @@ function drawIslandImage(island) {
 
   image(img, x, y, w, h);
   pop();
-}
-
-// -----------------------------------------------------
-// SHOW CITY RECT OUTLINES (for debugging)
-// -----------------------------------------------------
-function drawCityAreas(island) {
-  if (!island.cityAreas) return;
-
-  for (let city in island.cityAreas) {
-    let area = island.cityAreas[city];
-
-    // rectangle
-    push();
-    noFill();
-    stroke(255, 80);
-    rect(area.x, area.y, area.w, area.h);
-    pop();
-
-    // label
-    push();
-    fill(200);
-    noStroke();
-    textSize(12);
-    text(city, area.x + 4, area.y + 4);
-    pop();
-  }
 }
 
 // -----------------------------------------------------
@@ -384,25 +357,75 @@ function applyPriceScaling(island) {
 // CITY LAYOUT BOXES
 // -----------------------------------------------------
 function computeCityLayouts(island) {
-  const cities = Object.keys(island.cities);
-  const n = cities.length;
-  if (n === 0) return;
+  const regionName = island.name; // "hokkaido", "honshu", ...
 
-  const ux = island.x + island.w * 0.15;
-  const uy = island.y + island.h * 0.10;
-  const uw = island.w * 0.70;
-  const uh = island.h * 0.80;
+  const maskRegionImg = cityMasks[regionName]["_region"];
+  if (!maskRegionImg) return;
 
-  const ch = uh / n;
+  // 섬 이미지와 마스크 이미지의 해상도가 같다고 가정
+  const imgW = maskRegionImg.width;
+  const imgH = maskRegionImg.height;
+
+  // 섬이 캔버스에서 차지하는 영역 → 이미지 픽셀 좌표와의 스케일링
+  const scaleX = island.w / imgW;
+  const scaleY = island.h / imgH;
 
   island.cityAreas = {};
 
-  for (let i = 0; i < n; i++) {
-    island.cityAreas[cities[i]] = {
-      x: ux,
-      y: uy + ch * i,
-      w: uw,
-      h: ch
+  // 이 섬에 실제로 존재하는 city들만 처리
+  const cities = Object.keys(island.cities);
+
+  for (let city of cities) {
+    const maskImg = cityMasks[regionName][city];
+    if (!maskImg) continue;
+
+    maskImg.loadPixels();
+
+    let minX = maskImg.width;
+    let minY = maskImg.height;
+    let maxX = -1;
+    let maxY = -1;
+
+    // 마스크 이미지 전체에서 알파 있는 부분의 바운딩 박스 찾기
+    for (let y = 0; y < maskImg.height; y++) {
+      for (let x = 0; x < maskImg.width; x++) {
+        const idx = (y * maskImg.width + x) * 4;
+        const alpha = maskImg.pixels[idx + 3];
+
+        if (alpha > 10) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    // 해당 city 마스크에 아무 픽셀도 없으면 패스
+    if (maxX < minX || maxY < minY) continue;
+
+    // 마스크 좌표 → 캔버스 좌표로 변환
+    const boxW = maxX - minX + 1;
+    const boxH = maxY - minY + 1;
+
+    const areaX = island.x + minX * scaleX;
+    const areaY = island.y + minY * scaleY;
+    const areaW = boxW * scaleX;
+    const areaH = boxH * scaleY;
+
+    island.cityAreas[city] = {
+      x: areaX,
+      y: areaY,
+      w: areaW,
+      h: areaH,
+
+      // 나중에 마스크 샘플링할 때 다시 쓰기 위해 원본 마스크 좌표도 저장
+      maskBounds: {
+        minX,
+        minY,
+        maxX,
+        maxY
+      }
     };
   }
 }
