@@ -126,17 +126,25 @@ function setupIslands() {
 }
 
 function assignReceiptsByCity() {
+  // 초기화
+  for (let isl of islands) {
+    isl.receipts = [];    // ← 이것 추가
+    isl.cities = {};      // ← cities도 초기화(중복 방지)
+  }
+
   for (let r of receiptsData) {
-    // 해당 영수증의 region에 맞는 섬 찾기
+    // 해당 영수증의 region 찾기
     let island = islands.find(i => i.name === r.region);
     if (!island) continue;
 
-    // 도시가 처음 등장한 경우 초기화
+    // === 전체 수집 (섬 전체)
+    island.receipts.push(r);
+
+    // === 도시별 수집
     if (!island.cities[r.city]) {
       island.cities[r.city] = [];
     }
-
-    island.cities[r.city].push(r);  // 도시 배열에 push
+    island.cities[r.city].push(r);
   }
 }
 
@@ -182,6 +190,7 @@ function draw() {
       drawReceiptsInCity(area, receipts);
     }
   }
+}
 
 function drawIslandImage(island) {
   let img;
