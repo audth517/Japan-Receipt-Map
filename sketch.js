@@ -63,7 +63,12 @@ function setup() {
 // DATA 처리: receipts -> circles
 // -------------------------------------
 function processData() {
-  let arr = receiptsData.receipts || receiptsData;
+  let arr = receiptsData; 
+
+  if (!arr || !Array.isArray(arr)) {
+    console.error("Receipts data is not an array:", arr);
+    return;  // testtesttsetsetset
+  }
 
   // 1) price min/max 계산
   for (let r of arr) {
