@@ -1,6 +1,15 @@
 //------------------------------------------------------
 // GLOBALS
 //------------------------------------------------------
+const REGION_NAMES = ["Hokkaido", "Honshu", "Shikoku", "Kyushu"];
+
+const CITIES_BY_REGION = {
+  Hokkaido: ["Chitose", "Kamikawa", "Otaru", "Sapporo"],
+  Honshu:   ["Tokyo", "Osaka", "Kyoto"],
+  Shikoku:  ["Ehime", "Imabari", "Matsuyama", "Saijo"],
+  Kyushu:   ["Fukuoka", "Ukiha"]
+};
+
 let receiptsData = null;
 let jsonLoaded = false;
 
