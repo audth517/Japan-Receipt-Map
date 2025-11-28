@@ -17,7 +17,8 @@ const cityLayouts = {
     Chitose:   { x: 360, y: 220, radius: 55 },
     Kamikawa:  { x: 340, y: 160, radius: 70 },
     Otaru:     { x: 320, y: 200, radius: 55 },
-    Hakodate:  { x: 360, y: 315, radius: 60 }
+    Hakodate:  { x: 360, y: 315, radius: 60 },
+    Sapporo:   { x: 370, y: 340, radius: 30 }
   },
   Honshu: {
     Tokyo:     { x: 680, y: 260, radius: 85 },
