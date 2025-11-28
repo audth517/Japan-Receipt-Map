@@ -28,6 +28,15 @@ const categoryColors = {
   GS: [240, 190, 120],   // Goods Shop
 };
 
+const categoryLabels = {
+  TP: "Transportation",
+  TR: "Tourism",
+  RC: "Restaurant & Café",
+  CS: "Convenience Store",
+  GS: "Goods Shop",
+  Other: "Other"
+};
+
 // 상태
 let currentMode = "overview"; // "overview" | "city"
 let focusedRegion = null;
@@ -486,7 +495,12 @@ function drawTooltip(c) {
   fill(0);
   textAlign(LEFT, BOTTOM);
   textSize(14);
-  text(`${c.region} / ${c.city}\n${c.id} (${c.price}¥)`, 20, height - 20);
+  const catLabel = categoryLabels[c.category] || categoryLabels.Other;
+  text(
+    `${c.region} / ${c.city}\n${c.id} (${c.price}¥)\n${catLabel}`,
+    20,
+    height - 20
+  );
 }
 
 
