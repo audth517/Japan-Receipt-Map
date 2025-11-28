@@ -242,7 +242,25 @@ function drawReceiptsInCity(area, receipts) {
 
   const padding = 10;
   const maxWidth = area.w - padding * 2;
+  let maxReceiptW = 0;
+  let maxReceiptH = 0;
+  for (let r of receipts) {
+    maxReceiptW = max(maxReceiptW, r.scaledW);
+    maxReceiptH = max(maxReceiptH, r.scaledH);
+  }
 
+  let targetW = area.w * 0.90;  
+  let targetH = area.h * 0.80;  
+
+  let scaleFactor = min(targetW / maxReceiptW, targetH / maxReceiptH, 1);
+
+  if (scaleFactor < 1) {
+    for (let r of receipts) {
+      r.scaledW *= scaleFactor;
+      r.scaledH *= scaleFactor;
+    }
+  }
+  
   let rows = [];
   let currentRow = [];
   let currentWidth = 0;
