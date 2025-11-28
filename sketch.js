@@ -22,6 +22,10 @@ let currentMode = "overview";
 let focusedRegion = null;
 let focusedCity = null;
 
+// 캔버스 크기
+const CANVAS_W = 1000;
+const CANVAS_H = 1000;
+
 
 // -------------------------------------
 // REGION & CITY INFO
@@ -37,13 +41,23 @@ const CITIES_BY_REGION = {
 
 
 // -------------------------------------
-// ★ regionRectsPx: PNG 배치 최종 좌표 (1000x600 기준 잡았던 값)
+// 퍼센트 → 픽셀 변환 + regionRectsPx
+// (왼쪽 위 (0,0), x,y,w,h = 전체 지도 대비 %)
 // -------------------------------------
+function rectFromPct(xPct, yPct, wPct, hPct) {
+  return {
+    x: CANVAS_W * xPct / 100,
+    y: CANVAS_H * yPct / 100,
+    w: CANVAS_W * wPct / 100,
+    h: CANVAS_H * hPct / 100
+  };
+}
+
 let regionRectsPx = {
-  Hokkaido: { x: 560, y: 20,  w: 260, h: 260 },
-  Honshu:   { x: 470, y: 190, w: 340, h: 360 },
-  Shikoku:  { x: 520, y: 430, w: 160, h: 120 },
-  Kyushu:   { x: 390, y: 430, w: 180, h: 220 }
+  Hokkaido: rectFromPct(47.5,  0.0, 27.7, 27.8),
+  Honshu:   rectFromPct(7.1,  26.9, 54.6, 55.6),
+  Shikoku:  rectFromPct(13.7, 77.2, 14.4, 11.3),
+  Kyushu:   rectFromPct(0.0,  80.9, 13.9, 19.0)
 };
 
 
@@ -118,8 +132,7 @@ function preload() {
 // SETUP
 // -------------------------------------
 function setup() {
-  // ★★ 여기를 600 → 730으로만 수정 ★★
-  createCanvas(1000, 730);
+  createCanvas(CANVAS_W, CANVAS_H);
   pixelDensity(1);
 
   prepareCityMasks();
@@ -281,7 +294,7 @@ function processData() {
 
 
 // -------------------------------------
-// PRICE → RADIUS (log scale, 전체 0.4배)
+// PRICE → RADIUS (log scale, 전체 0.4배 느낌)
 // -------------------------------------
 function priceToRadius(price) {
   const p = Math.max(1, Number(price));
@@ -317,7 +330,10 @@ function drawRegions() {
   for (let region of REGION_NAMES) {
     const img = regionImages[region];
     const rr = regionRectsPx[region];
-    if (img) image(img, rr.x, rr.y, rr.w, rr.h);
+    if (img && rr) {
+      // CORNER 모드 기준: (x,y,w,h)
+      image(img, rr.x, rr.y, rr.w, rr.h);
+    }
   }
 }
 
