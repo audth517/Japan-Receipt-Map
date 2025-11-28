@@ -28,14 +28,10 @@ let focusedCity = null;
 const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
-
-//------------------------------------------------------
-// SHIFT + SCALE
-//------------------------------------------------------
+// 지도 전체 이동/축소
 const SHIFT_X = 80;
 const SHIFT_Y = 0;
 const SCALE   = 0.8;
-
 
 //------------------------------------------------------
 // REGION RAW COORDS (percent)
@@ -55,12 +51,10 @@ let regionRectsPct_raw = {
 //------------------------------------------------------
 function preload() {
 
-  // region images
   for (let region of REGION_NAMES) {
     regionImages[region] = loadImage(`assets/islands/${region.toLowerCase()}.png`);
   }
 
-  // city mask images
   for (let region of REGION_NAMES) {
     cityMaskImages[region] = {};
     for (let city of CITIES_BY_REGION[region]) {
@@ -109,7 +103,7 @@ function setup() {
 
 
 //------------------------------------------------------
-// (A) regionRectsPx 계산 (SHIFT + SCALE)
+// REGION RECTS (SHIFT + SCALE)
 //------------------------------------------------------
 function prepareRegionRects() {
 
@@ -133,7 +127,7 @@ function prepareRegionRects() {
 
 
 //------------------------------------------------------
-// (B) City Mask Processing
+// CITY MASK PROCESSING
 //------------------------------------------------------
 function prepareCityMasks() {
   cityMaskPoints = {};
@@ -151,7 +145,6 @@ function prepareCityMasks() {
       let iw = img.width;
       let ih = img.height;
 
-      // 안전 마진 (섬 외곽 벗어나는 것 방지)
       const SAFE_MARGIN = 0.03;
       const safeMinX = iw * SAFE_MARGIN;
       const safeMaxX = iw * (1 - SAFE_MARGIN);
@@ -167,7 +160,7 @@ function prepareCityMasks() {
           let b = img.pixels[idx + 2];
           let a = img.pixels[idx + 3];
 
-          // 🔥 mask 색을 (247,249,249) 근처로 변경
+          // 마스크 색: rgb(247,249,249)
           if (
             a > 0 &&
             Math.abs(r - 247) < 12 &&
@@ -190,11 +183,10 @@ function prepareCityMasks() {
 
 
 //------------------------------------------------------
-// PROCESS DATA (placing circles safely inside masks)
+// PROCESS DATA
 //------------------------------------------------------
 function processData() {
 
-  // compute min/max price
   for (let r of receiptsData) {
     let p = Number(r.price);
     if (p > 0) {
@@ -206,7 +198,6 @@ function processData() {
   circles = [];
 
   for (let r of receiptsData) {
-
     const region = r.region;
     const city = r.city;
     const rr = regionRectsPx[region];
@@ -216,12 +207,10 @@ function processData() {
     let xScreen, yScreen;
 
     if (pts && pts.length > 0) {
-
       const img = cityMaskImages[region][city];
       let iw = img.width;
       let ih = img.height;
 
-      // 중심성 필터 (섬 외곽 벗어나는 것 방지)
       let centerPts = pts.filter(p => {
         let dx = p.xImg - iw/2;
         let dy = p.yImg - ih/2;
@@ -234,7 +223,6 @@ function processData() {
       yScreen = rr.y + (pick.yImg / ih) * rr.h;
 
     } else {
-      // fallback
       xScreen = random(rr.x, rr.x + rr.w);
       yScreen = random(rr.y, rr.y + rr.h);
     }
@@ -289,5 +277,120 @@ function drawRegions() {
     const img = regionImages[region];
     const rr = regionRectsPx[region];
     if (img && rr) image(img, rr.x, rr.y, rr.w, rr.h);
+  }
+}
+
+
+//------------------------------------------------------
+// OVERVIEW MODE
+//------------------------------------------------------
+function drawOverview() {
+  noStroke();
+  const hover = getHoverCircleIndex();
+
+  for (let i = 0; i < circles.length; i++) {
+    const c = circles[i];
+
+    if (i === hover) {
+      fill(255);
+      stroke(0);
+      strokeWeight(2);
+    } else {
+      fill(255, 230);
+      noStroke();
+    }
+    ellipse(c.x, c.y, c.radius * 2);
+  }
+
+  if (hover !== -1) drawTooltip(circles[hover]);
+}
+
+
+//------------------------------------------------------
+// CITY MODE
+//------------------------------------------------------
+function drawCityFocus() {
+  noStroke();
+  const hover = getHoverCircleIndex();
+
+  for (let c of circles) {
+    const isFocused = (c.region === focusedRegion && c.city === focusedCity);
+
+    if (isFocused) {
+      fill(120, 180, 200, 240);
+    } else {
+      fill(255, 70);
+    }
+
+    ellipse(c.x, c.y, c.radius * 2);
+  }
+
+  if (hover !== -1) drawTooltip(circles[hover]);
+}
+
+
+//------------------------------------------------------
+// TOOLTIP
+//------------------------------------------------------
+function drawTooltip(c) {
+  fill(0);
+  textAlign(LEFT, TOP);
+  textSize(14);
+
+  text(
+    `${c.region}/${c.city}\n${c.id}\n${c.price}¥`,
+    20, height - 80
+  );
+}
+
+
+//------------------------------------------------------
+// UI TEXT
+//------------------------------------------------------
+function drawUI() {
+  fill(0);
+  noStroke();
+  textAlign(LEFT, TOP);
+  textSize(18);
+
+  text("Japan Receipts – Circle Map", 20, 20);
+
+  textSize(14);
+  if (currentMode === "overview") {
+    text("Click a circle to focus a city", 20, 48);
+  } else {
+    text(`Focused: ${focusedRegion}/${focusedCity} (click to exit)`, 20, 48);
+  }
+}
+
+
+//------------------------------------------------------
+// HOVER DETECTION
+//------------------------------------------------------
+function getHoverCircleIndex() {
+  for (let i = 0; i < circles.length; i++) {
+    const c = circles[i];
+    if (dist(mouseX, mouseY, c.x, c.y) < c.radius) return i;
+  }
+  return -1;
+}
+
+
+//------------------------------------------------------
+// MOUSE INTERACTION
+//------------------------------------------------------
+function mousePressed() {
+  const idx = getHoverCircleIndex();
+
+  if (currentMode === "overview") {
+    if (idx !== -1) {
+      focusedRegion = circles[idx].region;
+      focusedCity = circles[idx].city;
+      currentMode = "city";
+    }
+  } else {
+    currentMode = "overview";
+    focusedRegion = null;
+    focusedCity = null;
   }
 }
