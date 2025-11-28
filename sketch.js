@@ -1,77 +1,100 @@
-// GLOBAL VARIABLES ---------------------------------------- 
+// -----------------------------------------------------
+// GLOBAL VARIABLES
+// -----------------------------------------------------
 let receiptsData = [];
 let receiptImages = {};
 
 let islands = [];
-let activeIsland = null;
-
-let imagesLoaded = 0;
-let totalImages = 0;
 let ready = false;
 let assigned = false;
 
-let imgHokkaido, imgHonshu, imgShikoku, imgKyushu;
+let imgRegion = {};     // hokkaido / honshu / shikoku / kyushu
+let cityMasks = {};     // cityMasks[region][city]
 
-// PRELOAD ---------------------------------------- 
+// -----------------------------------------------------
+// CITY MAP STRUCTURE
+// -----------------------------------------------------
+const CITY_MAP = {
+  hokkaido: ["chitose", "sapporo", "otaru", "hakodate"],
+  honshu:   ["tokyo", "kyoto", "osaka"],
+  shikoku:  ["ehime", "imabari", "matsuyama", "saijo"],
+  kyushu:   ["fukuoka", "ukiha"]
+};
+
+// -----------------------------------------------------
+// PRELOAD
+// -----------------------------------------------------
 function preload() {
 
-  // 섬 SVG 파일 ---------------------------------------- 
-  imgHokkaido = loadImage("assets/islands/japan_hokkaido.png");
-  imgHonshu   = loadImage("assets/islands/japan_honshu.png");
-  imgShikoku  = loadImage("assets/islands/japan_shikoku.png");
-  imgKyushu   = loadImage("assets/islands/japan_kyushu.png");
+  // --- region PNG 로딩 ---
+  const regions = Object.keys(CITY_MAP);
+  for (let r of regions) {
+    imgRegion[r] = loadImage(`assets/islands/${r}.png`);
+  }
 
-  // JSON 로딩
+  // --- city PNG 로딩 ---
+  for (let r of regions) {
+    cityMasks[r] = {};
+
+    // region-level mask
+    cityMasks[r]["_region"] = loadImage(`assets/cities/${r}.png`);
+
+    // city-level mask
+    for (let c of CITY_MAP[r]) {
+      cityMasks[r][c] = loadImage(`assets/cities/${r}_${c}.png`);
+    }
+  }
+
+  // --- receipts data ---
   receiptsData = loadJSON("data/receipts.json?v=" + Date.now());
 }
 
-// SETUP ---------------------------------------- 
+// -----------------------------------------------------
+// SETUP
+// -----------------------------------------------------
 function setup() {
   createCanvas(windowWidth, windowHeight);
   imageMode(CENTER);
 
-  // JSON이 배열이 아닐 때 ---------------------------------------- 
   if (!Array.isArray(receiptsData)) {
     receiptsData = Object.values(receiptsData);
   }
 
-  totalImages = receiptsData.length;
+  // 이미지 로딩
+  let loadedCount = 0;
+  let totalImages = receiptsData.length;
 
-  // 영수증 이미지 로딩 ---------------------------------------- 
   for (let r of receiptsData) {
     let path = "assets/receipts/" + r.filename;
 
     receiptImages[r.id] = loadImage(
       path,
       () => {
-        imagesLoaded++;
-        if (imagesLoaded === totalImages) ready = true;
+        loadedCount++;
+        if (loadedCount === totalImages) {
+          ready = true;
+        }
       },
-      () => console.error("Failed:", path)
+      () => console.error("Failed to load:", path)
     );
   }
 
   setupIslands();
   assignReceiptsByCity();
-
-  console.log("Honshu:", imgHonshu.width, imgHonshu.height);
-  console.log("Hokkaido:", imgHokkaido.width, imgHokkaido.height);
-  console.log("Shikoku:", imgShikoku.width, imgShikoku.height);
-  console.log("Kyushu:", imgKyushu.width, imgKyushu.height);
 }
 
-
+// -----------------------------------------------------
+// WINDOW RESIZE
+// -----------------------------------------------------
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   setupIslands();
   assignReceiptsByCity();
-
-  for (let isl of islands) {
-    computeCityLayouts(isl);
-  }
 }
 
-// 섬 레이아웃 설정 ---------------------------------------- 
+// -----------------------------------------------------
+// ISLAND LAYOUT
+// -----------------------------------------------------
 function setupIslands() {
   islands = [];
 
@@ -80,75 +103,75 @@ function setupIslands() {
   const mapX = (width - mapW) / 2;
   const mapY = height * (-0.05);
 
-  const baseHonshuH = mapH * 0.55;
+  const baseH = mapH * 0.55;
 
   const defs = {
-    Honshu:   { dx: 0.47, dy: 0.54, hRatio: 0.7 },
-    Hokkaido: { dx: 0.90, dy: 0.25, hRatio: 0.364 },
-    Shikoku:  { dx: 0.26, dy: 0.74, hRatio: 0.161 },
-    Kyushu:   { dx: 0.01, dy: 0.79, hRatio: 0.259 }
+    honshu:   { dx: 0.47, dy: 0.54, hRatio: 0.7 },
+    hokkaido: { dx: 0.90, dy: 0.25, hRatio: 0.364 },
+    shikoku:  { dx: 0.26, dy: 0.74, hRatio: 0.161 },
+    kyushu:   { dx: 0.01, dy: 0.79, hRatio: 0.259 }
   };
 
-  const order = ["Honshu", "Hokkaido", "Shikoku", "Kyushu"];
+  const order = ["honshu", "hokkaido", "shikoku", "kyushu"];
 
   for (let name of order) {
-    let img = null;
-    if (name === "Hokkaido") img = imgHokkaido;
-    if (name === "Honshu")   img = imgHonshu;
-    if (name === "Shikoku")  img = imgShikoku;
-    if (name === "Kyushu")   img = imgKyushu;
+    let img = imgRegion[name];
     if (!img) continue;
 
     const d = defs[name];
 
-    const islandH = baseHonshuH * d.hRatio;
-    const islandW = islandH * (img.width / img.height); // width/height 0 문제는 별도 처리 필요
+    const h = baseH * d.hRatio;
+    const w = h * (img.width / img.height);
 
     const cx = mapX + mapW * d.dx;
     const cy = mapY + mapH * d.dy;
 
     islands.push({
       name,
-      x: cx - islandW / 2,
-      y: cy - islandH / 2,
-      w: islandW,
-      h: islandH,
+      x: cx - w/2,
+      y: cy - h/2,
+      w,
+      h,
       receipts: [],
       cities: {}
     });
   }
 }
 
-// 영수증을 섬과 도시별로 분류 ---------------------------------------- 
+// -----------------------------------------------------
+// ASSIGN RECEIPTS INTO ISLAND & CITY
+// -----------------------------------------------------
 function assignReceiptsByCity() {
-
   for (let isl of islands) {
     isl.receipts = [];
     isl.cities = {};
   }
 
   for (let r of receiptsData) {
-    let island = islands.find(i => i.name === r.region);
+    let region = r.region.toLowerCase();
+    let island = islands.find(i => i.name === region);
     if (!island) continue;
 
     island.receipts.push(r);
 
-    if (!island.cities[r.city]) island.cities[r.city] = [];
-    island.cities[r.city].push(r);
+    let city = r.city.toLowerCase();
+    if (!island.cities[city]) island.cities[city] = [];
+    island.cities[city].push(r);
   }
 }
 
-// DRAW ---------------------------------------- 
+// -----------------------------------------------------
+// DRAW
+// -----------------------------------------------------
 function draw() {
   background(20);
 
   if (!ready) {
     push();
-    resetMatrix();
     textAlign(CENTER, CENTER);
     fill(245);
     textSize(24);
-    text(`Loading images… ${imagesLoaded}/${totalImages}`, width / 2, height / 2);
+    text("Loading receipts...", width/2, height/2);
     pop();
     return;
   }
@@ -162,38 +185,29 @@ function draw() {
     assigned = true;
   }
 
-  for (let island of islands) {
-    drawIslandImage(island);
-    drawCityAreas(island);
+  // region image + city borders
+  for (let isl of islands) {
+    drawIslandImage(isl);
+    drawCityAreas(isl);
   }
 
+  // city-level receipt drawing
   for (let isl of islands) {
-    if (!isl.cityAreas) continue;
+    let region = isl.name;
 
-    let islandImg;
-    if (isl.name === "Hokkaido") islandImg = imgHokkaido;
-    if (isl.name === "Honshu")   islandImg = imgHonshu;
-    if (isl.name === "Shikoku")  islandImg = imgShikoku;
-    if (isl.name === "Kyushu")   islandImg = imgKyushu;
-  
     for (let city in isl.cityAreas) {
       let area = isl.cityAreas[city];
       let receipts = isl.cities[city];
-  
-      drawReceiptsInCity(area, receipts, isl, islandImg);
+      drawReceiptsInCity(area, receipts, region, city);
     }
   }
 }
-  
-// 섬 이미지 그리기 ---------------------------------------- 
+
+// -----------------------------------------------------
+// DRAW REGION IMAGE
+// -----------------------------------------------------
 function drawIslandImage(island) {
-  let img;
-
-  if (island.name === "Hokkaido") img = imgHokkaido;
-  if (island.name === "Honshu")   img = imgHonshu;
-  if (island.name === "Shikoku")  img = imgShikoku;
-  if (island.name === "Kyushu")   img = imgKyushu;
-
+  let img = imgRegion[island.name];
   if (!img) return;
 
   push();
@@ -202,153 +216,98 @@ function drawIslandImage(island) {
   let aspect = img.width / img.height;
   let boxAspect = island.w / island.h;
 
-  let drawW, drawH;
-
+  let w, h;
   if (aspect > boxAspect) {
-    drawW = island.w;
-    drawH = island.w / aspect;
+    w = island.w;
+    h = island.w / aspect;
   } else {
-    drawH = island.h;
-    drawW = island.h * aspect;
+    h = island.h;
+    w = island.h * aspect;
   }
 
-  let x = island.x + (island.w - drawW) * 0.5;
-  let y = island.y + (island.h - drawH) * 0.5;
+  let x = island.x + (island.w - w)/2;
+  let y = island.y + (island.h - h)/2;
 
-  image(img, x, y, drawW, drawH);
-
+  image(img, x, y, w, h);
   pop();
 }
 
-// 도시 영역 그리기 ---------------------------------------- 
+// -----------------------------------------------------
+// SHOW CITY RECT OUTLINES (for debugging)
+// -----------------------------------------------------
 function drawCityAreas(island) {
   if (!island.cityAreas) return;
 
   for (let city in island.cityAreas) {
-    const area = island.cityAreas[city];
+    let area = island.cityAreas[city];
 
+    // rectangle
     push();
     noFill();
     stroke(255, 80);
     rect(area.x, area.y, area.w, area.h);
     pop();
 
+    // label
     push();
-    noStroke();
     fill(200);
+    noStroke();
     textSize(12);
-    textAlign(LEFT, TOP);
     text(city, area.x + 4, area.y + 4);
     pop();
   }
 }
 
-// 도시별 영수증 배치하기 ---------------------------------------- 
-function drawReceiptsInCity(area, receipts, island, islandImg) {
-  if (receipts.length === 0) return;
+// -----------------------------------------------------
+// DRAW RECEIPTS INSIDE CITY MASK
+// -----------------------------------------------------
+function drawReceiptsInCity(area, receipts, regionName, cityName) {
+  if (!receipts || receipts.length === 0) return;
 
-  // 1) 도시 mask 만들기
-  let mask = createCityMask(island, area, islandImg);
+  let maskImg = cityMasks[regionName][cityName];
+  if (!maskImg) return;
 
-  // 2) mask 기반으로 영수증 배치 좌표 계산
+  let mask = createMaskGrid(area, maskImg);
   placeReceiptsInMask(mask, receipts);
 
-  // 3) 실제 화면에 그리기
   for (let r of receipts) {
-    if (!receiptImages[r.id]) continue;
-
-    let drawX = area.x + r.cityX + r.scaledW / 2;
-    let drawY = area.y + r.cityY + r.scaledH / 2;
+    let drawX = area.x + r.cityX + r.scaledW/2;
+    let drawY = area.y + r.cityY + r.scaledH/2;
 
     image(receiptImages[r.id], drawX, drawY, r.scaledW, r.scaledH);
   }
 }
 
-// 가격 기반 스케일 계산 ---------------------------------------- 
-function computeIslandScaling(island) {
-  let sum = 0;
-  for (let r of island.receipts) sum += r.price;
-
-  island.scaleK = (island.w * island.h * 0.05) / sum;
-}
-
-// 영수증 스케일 적용 ---------------------------------------- 
-function applyPriceScaling(island) {
-  for (let r of island.receipts) {
-    let aspect = r.width / r.height;
-    let area = r.price * island.scaleK;
-
-    let scaledH = sqrt(area / aspect);
-    let scaledW = scaledH * aspect;
-
-    r.scaledW = scaledW;
-    r.scaledH = scaledH;
-  }
-}
-
-// 도시 레이아웃 ---------------------------------------- 
-function computeCityLayouts(island) {
-  const cities = Object.keys(island.cities);
-  const n = cities.length;
-  if (n === 0) return;
-
-  const ux = island.x + island.w * 0.15;
-  const uy = island.y + island.h * 0.10;
-  const uw = island.w * 0.70;
-  const uh = island.h * 0.80;
-
-  const cityH = uh / n;
-
-  island.cityAreas = {};
-
-  for (let i = 0; i < n; i++) {
-    let city = cities[i];
-    island.cityAreas[city] = {
-      x: ux,
-      y: uy + cityH * i,
-      w: uw,
-      h: cityH
-    };
-  }
-}
-
 // -----------------------------------------------------
-// CITY MASK 생성 (섬 PNG 픽셀 기반)
+// CREATE MASK GRID (city PNG 기반)
 // -----------------------------------------------------
-
-function createCityMask(island, area, islandImg) {
-  let mask = [];
+function createMaskGrid(area, maskImg) {
+  let grid = [];
+  maskImg.loadPixels();
 
   for (let y = 0; y < area.h; y++) {
-    mask[y] = [];
+    grid[y] = [];
 
     for (let x = 0; x < area.w; x++) {
-      // 캔버스 상의 실제 좌표
-      let px = int(area.x + x);
-      let py = int(area.y + y);
 
-      if (px < 0 || py < 0 || px >= width || py >= height) {
-        mask[y][x] = false;
-        continue;
-      }
+      // PNG 해상도가 region과 동일 → 좌표 그대로 사용
+      let mx = int(area.x + x);
+      let my = int(area.y + y);
 
-      // ★ 캔버스에서 픽셀을 읽어온다 (섬은 이미 그려져 있음)
-      let c = get(px, py);   // RGBA
+      let idx = (my * maskImg.width + mx) * 4;
+      let alpha = maskImg.pixels[idx + 3];
 
-      // 알파 / 밝기 기준으로 섬 영역 판정
-      // PNG에 투명 배경이면 c[3] > 10이면 섬이라고 보면 됨
-      mask[y][x] = (c[3] > 10);
+      grid[y][x] = alpha > 10;   // shape 내부만 true
     }
   }
-
-  return mask;
+  return grid;
 }
 
 // -----------------------------------------------------
-// 도시 모양(mask) 안에서 영수증 배치
+// PLACE RECEIPTS INSIDE INTERNAL GRID
 // -----------------------------------------------------
 function placeReceiptsInMask(mask, receipts) {
-  const placed = [];
+  let placed = [];
 
   for (let r of receipts) {
     let w = int(r.scaledW);
@@ -357,13 +316,14 @@ function placeReceiptsInMask(mask, receipts) {
     let pos = findPositionForRectangle(mask, w, h, placed);
 
     if (pos) {
-      r.cityX = pos.x;  // 지역 내부 x
-      r.cityY = pos.y;  // 지역 내부 y
+      r.cityX = pos.x;
+      r.cityY = pos.y;
       placed.push({x: pos.x, y: pos.y, w, h});
     }
   }
 }
 
+// -----------------------------------------------------
 function findPositionForRectangle(mask, w, h, placed) {
   for (let y = 0; y < mask.length - h; y++) {
     for (let x = 0; x < mask[0].length - w; x++) {
@@ -380,11 +340,7 @@ function findPositionForRectangle(mask, w, h, placed) {
 function fitsMask(mask, x, y, w, h) {
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
-      // 범위 넘어가면 실패
-      if (y + j < 0 || y + j >= mask.length) return false;
-      if (x + i < 0 || x + i >= mask[0].length) return false;
-
-      if (!mask[y + j][x + i]) return false;
+      if (!mask[y+j][x+i]) return false;
     }
   }
   return true;
@@ -392,12 +348,61 @@ function fitsMask(mask, x, y, w, h) {
 
 function overlaps(x, y, w, h, placed) {
   for (let p of placed) {
-    if (
-      x < p.x + p.w &&
-      x + w > p.x &&
-      y < p.y + p.h &&
-      y + h > p.y
-    ) return true;
+    if (x < p.x + p.w &&
+        x + w > p.x &&
+        y < p.y + p.h &&
+        y + h > p.y)
+      return true;
   }
   return false;
+}
+
+// -----------------------------------------------------
+// PRICE SCALING
+// -----------------------------------------------------
+function computeIslandScaling(island) {
+  let total = 0;
+  for (let r of island.receipts) total += r.price;
+
+  island.scaleK = (island.w * island.h * 0.05) / total;
+}
+
+function applyPriceScaling(island) {
+  for (let r of island.receipts) {
+    let aspect = r.width / r.height;
+    let area = r.price * island.scaleK;
+
+    let h = sqrt(area / aspect);
+    let w = h * aspect;
+
+    r.scaledW = w;
+    r.scaledH = h;
+  }
+}
+
+// -----------------------------------------------------
+// CITY LAYOUT BOXES
+// -----------------------------------------------------
+function computeCityLayouts(island) {
+  const cities = Object.keys(island.cities);
+  const n = cities.length;
+  if (n === 0) return;
+
+  const ux = island.x + island.w * 0.15;
+  const uy = island.y + island.h * 0.10;
+  const uw = island.w * 0.70;
+  const uh = island.h * 0.80;
+
+  const ch = uh / n;
+
+  island.cityAreas = {};
+
+  for (let i = 0; i < n; i++) {
+    island.cityAreas[cities[i]] = {
+      x: ux,
+      y: uy + ch * i,
+      w: uw,
+      h: ch
+    };
+  }
 }
