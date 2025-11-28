@@ -52,10 +52,32 @@ let focusedCity = null;
 // PRELOAD — Safari에서 비동기일 수 있음
 // -------------------------------------
 function preload() {
-  receiptsData = loadJSON("data/receipts.json", () => {
-    jsonLoaded = true;
-    console.log("JSON Loaded:", receiptsData);
-  });
+  // Safari 대응: loadJSON 대신 fetch 사용
+  let url = "data/receipts.json";
+
+  receiptsData = loadJSON(url, 
+    (result) => {
+      // loadJSON 성공 (Chrome 등)
+      receiptsData = result;
+      jsonLoaded = true;
+      console.log("JSON loaded via loadJSON:", receiptsData);
+    },
+    (err) => {
+      // loadJSON 실패 → Safari fallback
+      console.warn("loadJSON failed, trying fetch() fallback", err);
+
+      fetch(url)
+        .then(res => res.json())
+        .then(json => {
+          receiptsData = json;
+          jsonLoaded = true;
+          console.log("JSON loaded via fetch fallback:", receiptsData);
+        })
+        .catch(e => {
+          console.error("Both loadJSON and fetch failed:", e);
+        });
+    }
+  );
 }
 
 
