@@ -59,21 +59,14 @@ function setup() {
   }
 
   setupIslands();
+  assignReceiptsByCity();
 }
 
-
-// -----------------------------------------------------
-// WINDOW RESIZE
-// -----------------------------------------------------
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   setupIslands();
 }
 
-
-// -----------------------------------------------------
-// ISLAND CREATION
-// -----------------------------------------------------
 function setupIslands() {
   islands = [];
 
@@ -121,25 +114,26 @@ function setupIslands() {
       w: islandW,
       h: islandH,
       receipts: [],
+      cities: {}
     });
   }
 }
 
-
-// -----------------------------------------------------
-// RANDOM ASSIGNMENT
-// -----------------------------------------------------
-function assignReceiptsToIslands() {
+function assignReceiptsByCity() {
   for (let r of receiptsData) {
-    let idx = floor(random(islands.length));
-    islands[idx].receipts.push(r);
+    // 해당 영수증의 region에 맞는 섬 찾기
+    let island = islands.find(i => i.name === r.region);
+    if (!island) continue;
+
+    // 도시가 처음 등장한 경우 초기화
+    if (!island.cities[r.city]) {
+      island.cities[r.city] = [];
+    }
+
+    island.cities[r.city].push(r);  // 도시 배열에 push
   }
 }
 
-
-// -----------------------------------------------------
-// DRAW LOOP
-// -----------------------------------------------------
 function draw() {
   background(20);
 
@@ -156,31 +150,33 @@ function draw() {
 
   // 한 번만 실행되는 부분
   if (!assigned) {
-    assignReceiptsToIslands();
-
+  // price scaling은 섬 기준 그대로
     for (let isl of islands) {
       computeIslandScaling(isl);
       applyPriceScaling(isl);
+  
+      computeCityLayouts(isl);  // 🔥 도시 레이아웃 생성
     }
-
+  
     assigned = true;
   }
 
   // 섬 그리기
   for (let island of islands) {
     drawIslandImage(island);
+    drawCityAreas(island);
   }
-
-  // 영수증 배치
+  
   for (let isl of islands) {
-    drawReceiptsInIsland(isl);
+    if (!isl.cityAreas) continue;
+  
+    for (let city in isl.cityAreas) {
+      let area = isl.cityAreas[city];
+      let receipts = isl.cities[city];
+      drawReceiptsInCity(area, receipts);
+    }
   }
-}
 
-
-// -----------------------------------------------------
-// DRAW ISLAND SVG
-// -----------------------------------------------------
 function drawIslandImage(island) {
   let img;
 
@@ -216,10 +212,6 @@ function drawIslandImage(island) {
   pop();
 }
 
-
-// -----------------------------------------------------
-// RECEIPT LAYOUT
-// -----------------------------------------------------
 function drawReceiptsInIsland(island) {
   let list = island.receipts;
   if (list.length === 0) return;
@@ -268,10 +260,78 @@ function drawReceiptsInIsland(island) {
   }
 }
 
+function drawCityAreas(island) {
+  if (!island.cityAreas) return;
 
-// -----------------------------------------------------
-// PRICE SCALING
-// -----------------------------------------------------
+  for (let city in island.cityAreas) {
+    const area = island.cityAreas[city];
+
+    push();
+    noFill();
+    stroke(255, 80);
+    rect(area.x, area.y, area.w, area.h);
+    pop();
+
+    // 도시 이름 표시
+    push();
+    noStroke();
+    fill(200);
+    textSize(12);
+    textAlign(LEFT, TOP);
+    text(city, area.x + 4, area.y + 4);
+    pop();
+  }
+}
+
+function drawReceiptsInCity(area, receipts) {
+  if (receipts.length === 0) return;
+
+  // 기존 row layout 코드 그대로
+  // 다만 island.x, island.w 대신 area.x, area.w 사용
+
+  const padding = 10;
+  const maxWidth = area.w - padding * 2;
+
+  let rows = [];
+  let currentRow = [];
+  let currentWidth = 0;
+
+  for (let r of receipts) {
+    let w = r.scaledW;
+    let nextWidth = currentWidth + w + (currentRow.length ? padding : 0);
+
+    if (nextWidth > maxWidth) {
+      rows.push(currentRow);
+      currentRow = [r];
+      currentWidth = w;
+    } else {
+      currentRow.push(r);
+      currentWidth = nextWidth;
+    }
+  }
+  if (currentRow.length) rows.push(currentRow);
+
+  let rowHeights = rows.map(row => row.reduce((m, r) => max(m, r.scaledH), 0));
+  let totalHeight = rowHeights.reduce((a, b) => a + b, 0) + padding * (rowHeights.length - 1);
+
+  let y = area.y + (area.h - totalHeight) / 2;
+
+  for (let i = 0; i < rows.length; i++) {
+    let row = rows[i];
+    let maxH = rowHeights[i];
+    let rowWidth = row.reduce((acc, r, idx) => acc + r.scaledW + (idx ? padding : 0), 0);
+
+    let x = area.x + (area.w - rowWidth) / 2;
+
+    for (let r of row) {
+      let img = receiptImages[r.id];
+      if (img) image(img, x + r.scaledW / 2, y + maxH / 2, r.scaledW, r.scaledH);
+      x += r.scaledW + padding;
+    }
+    y += maxH + padding;
+  }
+}
+
 function computeIslandScaling(island) {
   let sum = 0;
   for (let r of island.receipts) sum += r.price;
@@ -289,5 +349,32 @@ function applyPriceScaling(island) {
 
     r.scaledW = scaledW;
     r.scaledH = scaledH;
+  }
+}
+
+function computeCityLayouts(island) {
+  const cities = Object.keys(island.cities);
+  const n = cities.length;
+  if (n === 0) return;
+
+  // usable box (섬 안에서 영수증 넣는 영역)
+  const ux = island.x + island.w * 0.15;
+  const uy = island.y + island.h * 0.10;
+  const uw = island.w * 0.70;
+  const uh = island.h * 0.80;
+
+  // 각 도시를 수평으로 나눔
+  const cityH = uh / n;
+
+  island.cityAreas = {};
+
+  for (let i = 0; i < n; i++) {
+    let city = cities[i];
+    island.cityAreas[city] = {
+      x: ux,
+      y: uy + cityH * i,
+      w: uw,
+      h: cityH
+    };
   }
 }
