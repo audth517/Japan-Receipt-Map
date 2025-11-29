@@ -34,7 +34,7 @@ const CANVAS_H = 1000;
 // layout shift / scale
 const SHIFT_X = 295;
 const SHIFT_Y = 125;
-const SCALE   = 0.83;
+const SCALE   = 1;
 
 // Constellation style category colors
 const categoryColors = {
@@ -79,7 +79,11 @@ let regionRectsPx = {};
 //------------------------------------------------------
 // PRELOAD
 //------------------------------------------------------
+let titleFont;
+
 function preload() {
+  titleFont = loadFont('assets/fonts/DepartureMono-Regular.woff');
+  
   for (let region of REGION_NAMES) {
     regionImages[region] =
       loadImage(`assets/islands/${region.toLowerCase()}.png`);
