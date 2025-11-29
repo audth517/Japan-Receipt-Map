@@ -29,8 +29,8 @@ const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
 // 지도 전체 이동/축소
-const SHIFT_X = 290;
-const SHIFT_Y = 170;
+const SHIFT_X = 295;
+const SHIFT_Y = 140;
 const SCALE   = 0.9;
 
 const categoryColors = {
