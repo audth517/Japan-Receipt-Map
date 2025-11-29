@@ -199,9 +199,9 @@ function prepareCityMasks() {
 
           if (
             a > 0 &&
-            Math.abs(r - 60) < 10 &&
-            Math.abs(g - 59) < 10 &&
-            Math.abs(b - 56) < 10
+            Math.abs(r - 44) < 10 &&
+            Math.abs(g - 44) < 10 &&
+            Math.abs(b - 42) < 10
           ) {
             if (x > safeMinX && x < safeMaxX &&
                 y > safeMinY && y < safeMaxY) {
