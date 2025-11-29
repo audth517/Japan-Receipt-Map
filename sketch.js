@@ -27,6 +27,7 @@ let focusedCity   = null;
 let focusedCategory = null;     // category within city
 
 let bgCol;
+let regionBaseScale = 1;
 
 // Canvas size (참고용 상수)
 const CANVAS_W = 1000;
@@ -324,6 +325,8 @@ function zoomToRegion(region) {
 
   regionFade = 0;
   regionFadeTarget = 1;
+
+  regionBaseScale = s;
 }
 
 // 🔸 city bounding box
@@ -359,9 +362,8 @@ function zoomToCity(region, city) {
   const availH = height * (1 - margin * 2);
 
   const rawScale = min(availW / box.w, availH / box.h);
-  const regionScale = targetViewScale;
-  const minScale = regionScale;
-  const maxScale = regionScale * 3.2;
+  const minScale = regionBaseScale;          
+  const maxScale = regionBaseScale * 3.2;    
   const s = constrain(rawScale, minScale, maxScale);
   targetViewScale = s;
 
