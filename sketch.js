@@ -839,6 +839,7 @@ function drawReceiptsInCity(area, receipts) {
       hoveredReceipt = r;   // r 전체 오브젝트를 기억
     }
   }
+}
 
 //------------------------------------------------------
 // 섬+지역+분류+가격 text draw
@@ -849,9 +850,9 @@ function drawTooltip(r) {
   const corner = 6;
 
   let msg1 = `${r.region} ${r.city}`;
-  let msg2 = `${r.category}` `¥${r.price}`;
+  let msg2 = `${r.category} ¥${r.price}`;
 
-  const lines = [msg1, msg2, msg3];
+  const lines = [msg1, msg2];
 
   // 폭 계산
   let w = 0;
