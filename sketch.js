@@ -29,7 +29,7 @@ const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
 // 지도 전체 이동/축소
-const SHIFT_X = 80;
+const SHIFT_X = 120;
 const SHIFT_Y = 0;
 const SCALE   = 0.8;
 
