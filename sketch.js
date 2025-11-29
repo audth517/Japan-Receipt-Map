@@ -607,10 +607,11 @@ function drawUI() {
   textAlign(LEFT, TOP);
   textSize(20);
 
-  // DepartureMono 그대로 사용
+  // 기본 monoFont 사용 (textFont 호출 없음)
   text("Japan Receipts Map", 20, 20);
 
   textSize(13);
+
   if (currentMode === "overview") {
     text("Hover: region connections\nClick: zoom into region", 20, 48);
   } else if (currentMode === "region") {
