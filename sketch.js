@@ -31,11 +31,6 @@ let bgCol;
 const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
-// layout shift / scale
-const SHIFT_X = 295;
-const SHIFT_Y = 125;
-const SCALE   = 1;
-
 // Constellation style category colors
 const categoryColors = {
   TP: [120, 160, 230],
@@ -113,8 +108,8 @@ function preload() {
 // SETUP
 //------------------------------------------------------
 function setup() {
+  createCanvas(windowWidth, windowHeight);
   pixelDensity(2);     // anti-alias for circles
-  const c = createCanvas(CANVAS_W, CANVAS_H);  // Safari srgb option removed
 
   bgCol = color("rgb(35, 35, 34)");
 
@@ -149,17 +144,12 @@ function prepareRegionRects() {
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
 
-    const rawX = CANVAS_W * P.x / 100;
-    const rawY = CANVAS_H * P.y / 100;
-    const rawW = CANVAS_W * P.w / 100;
-    const rawH = CANVAS_H * P.h / 100;
+    const x = width  * P.x / 100;
+    const y = height * P.y / 100;
+    const w = width  * P.w / 100;
+    const h = height * P.h / 100;
 
-    regionRectsPx[region] = {
-      x: rawX * SCALE + SHIFT_X,
-      y: rawY * SCALE + SHIFT_Y,
-      w: rawW * SCALE,
-      h: rawH * SCALE
-    };
+    regionRectsPx[region] = { x, y, w, h };
   }
 }
 
@@ -282,7 +272,7 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 0.01, 10);
+  return map(logP, logMin, logMax, 0.005, 5);
 }
 
 
@@ -303,8 +293,8 @@ function zoomToRegion(region) {
   if (!rr) return;
 
   const marginRatio = 0.15;
-  const availW = CANVAS_W * (1 - 2 * marginRatio);
-  const availH = CANVAS_H * (1 - 2 * marginRatio);
+  const availW = width  * (1 - 2 * marginRatio);
+  const availH = height * (1 - 2 * marginRatio);
 
   const s = min(availW / rr.w, availH / rr.h);
   targetViewScale = s;
@@ -312,8 +302,8 @@ function zoomToRegion(region) {
   const cx = rr.x + rr.w / 2;
   const cy = rr.y + rr.h / 2;
 
-  targetViewOffsetX = CANVAS_W / 2 - s * cx;
-  targetViewOffsetY = CANVAS_H / 2 - s * cy;
+  targetViewOffsetX = width  / 2 - s * cx;
+  targetViewOffsetY = height / 2 - s * cy;
 
   regionFade = 0;
   regionFadeTarget = 1;
@@ -562,4 +552,9 @@ function mousePressed() {
       }
     }
   }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  prepareRegionRects(); // 크기 바뀔 때마다 지도 위치 다시 계산
 }
