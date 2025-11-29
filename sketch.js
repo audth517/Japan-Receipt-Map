@@ -44,8 +44,6 @@ const categoryColors = {
   Other: [180, 180, 180]
 };
 
-// 🔥 배경색(sRGB 60,59,56)을 담을 컬러 객체
-let bgCol = null;
 
 //------------------------------------------------------
 // REGION RAW COORDS (percent)
