@@ -54,7 +54,6 @@ let regionRectsPct_raw = {
   Kyushu:   rectPct(0.0,  80.9, 13.9, 19.0)
 };
 
-
 //------------------------------------------------------
 // PRELOAD
 //------------------------------------------------------
@@ -83,7 +82,6 @@ function preload() {
   );
 }
 
-
 //------------------------------------------------------
 // SETUP
 //------------------------------------------------------
@@ -91,8 +89,12 @@ let regionRectsPx = {};
 
 function setup() {
   pixelDensity(1);
-  createCanvas(CANVAS_W, CANVAS_H);
-  pixelDensity(1);
+  const c = createCanvas(CANVAS_W, CANVAS_H);
+  const ctx = c.elt.getContext("2d", { colorSpace: "srgb" });
+
+  if (ctx && ctx.colorSpace !== "srgb") {
+    console.warn("Canvas colorSpace not set to sRGB (Safari version too old).");
+  }
 
   prepareRegionRects();
   prepareCityMasks();
@@ -110,7 +112,6 @@ function setup() {
     processData();
   }
 }
-
 
 //------------------------------------------------------
 // REGION RECTS (SHIFT + SCALE)
@@ -134,7 +135,6 @@ function prepareRegionRects() {
     };
   }
 }
-
 
 //------------------------------------------------------
 // CITY MASK PROCESSING
@@ -190,7 +190,6 @@ function prepareCityMasks() {
     }
   }
 }
-
 
 //------------------------------------------------------
 // PROCESS DATA
@@ -251,7 +250,6 @@ function processData() {
   }
 }
 
-
 //------------------------------------------------------
 // PRICE → RADIUS
 //------------------------------------------------------
@@ -262,7 +260,6 @@ function priceToRadius(price) {
   const logP = Math.log(p);
   return map(logP, logMin, logMax, 1.5, 12.8);
 }
-
 
 //------------------------------------------------------
 // DRAW
@@ -278,7 +275,6 @@ function draw() {
   drawUI();
 }
 
-
 //------------------------------------------------------
 // DRAW REGIONS
 //------------------------------------------------------
@@ -289,7 +285,6 @@ function drawRegions() {
     if (img && rr) image(img, rr.x, rr.y, rr.w, rr.h);
   }
 }
-
 
 //------------------------------------------------------
 // OVERVIEW MODE
@@ -314,7 +309,6 @@ function drawOverview() {
 
   if (hover !== -1) drawTooltip(circles[hover]);
 }
-
 
 //------------------------------------------------------
 // CITY MODE
@@ -341,7 +335,6 @@ function drawCityFocus() {
   if (hover !== -1) drawTooltip(circles[hover]);
 }
 
-
 //------------------------------------------------------
 // TOOLTIP
 //------------------------------------------------------
@@ -355,7 +348,6 @@ function drawTooltip(c) {
     20, height - 80
   );
 }
-
 
 //------------------------------------------------------
 // UI TEXT
@@ -376,7 +368,6 @@ function drawUI() {
   }
 }
 
-
 //------------------------------------------------------
 // HOVER DETECTION
 //------------------------------------------------------
@@ -387,7 +378,6 @@ function getHoverCircleIndex() {
   }
   return -1;
 }
-
 
 //------------------------------------------------------
 // MOUSE INTERACTION
