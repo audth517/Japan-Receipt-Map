@@ -161,32 +161,29 @@ function setup() {
 //}
 
 function prepareRegionRects() {
-  const browserAspect = width / height;
+  // 1) 일본 지도를 "정사각형 좌표계" 안에 그린다고 가정
+  //    → 브라우저가 가로든 세로든 크기가 달라져도
+  //      base = min(width, height)를 기준으로 동일 비율 유지
+  const base = min(width, height);
 
-  if (browserAspect > japanAspect) {
-    worldScale = height / 1600;
-    worldOffsetX = (width - JAPAN_W * worldScale) / 2;
-    worldOffsetY = 0;
-  } else {
-    // 브라우저가 더 세로로 길다 → 가로 기준 스케일
-    worldScale = width / 1000;
-    worldOffsetX = 0;
-    worldOffsetY = (height - JAPAN_H * worldScale) / 2;
-  }
+  // 2) 남는 쪽은 여백으로 두고 가운데 정렬
+  const offsetX = (width  - base) / 2;
+  const offsetY = (height - base) / 2;
 
+  // 3) regionRectsPct_raw의 x,y,w,h는
+  //    0~100% 기준의 "정사각형 공간"이라고 생각하고 환산
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
+    if (!P) continue;
 
-    const x = worldOffsetX + (P.x / 100 * JAPAN_W) * worldScale;
-    const y = worldOffsetY + (P.y / 100 * JAPAN_H) * worldScale;
-    const w = (P.w / 100 * JAPAN_W) * worldScale;
-    const h = (P.h / 100 * JAPAN_H) * worldScale;
+    const x = offsetX + base * (P.x / 100);
+    const y = offsetY + base * (P.y / 100);
+    const w = base * (P.w / 100);
+    const h = base * (P.h / 100);
 
     regionRectsPx[region] = { x, y, w, h };
   }
 }
-
-
 
 //------------------------------------------------------
 // CITY MASK PROCESSING
