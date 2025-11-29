@@ -112,7 +112,7 @@ function setup() {
   pixelDensity(2);     // anti-alias for circles
   const c = createCanvas(CANVAS_W, CANVAS_H);  // Safari srgb option removed
 
-  bgCol = color("rgb(43, 39, 36)");
+  bgCol = color("rgb(35, 35, 34)");
 
   smooth();
   drawingContext.imageSmoothingEnabled = true;
@@ -278,7 +278,7 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 0.5, 10);
+  return map(logP, logMin, logMax, 0.1, 5);
 }
 
 
