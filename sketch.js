@@ -25,6 +25,8 @@ let currentMode = "overview";
 let focusedRegion = null;
 let focusedCity = null;
 
+let bgCol;
+
 const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
@@ -92,7 +94,7 @@ let regionRectsPx = {};
 
 function setup() {
   pixelDensity(1);
-
+  
   const c = createCanvas(CANVAS_W, CANVAS_H);
   const ctx = c.elt.getContext("2d", { colorSpace: "srgb" });
 
@@ -100,8 +102,7 @@ function setup() {
     console.warn("Canvas colorSpace not set to sRGB (Safari version too old).");
   }
 
-  // 🔥 CSS의 color(srgb 60 59 56)과 맞춘 배경색
-  bgCol = color("color(srgb 60 59 56)");
+  bgCol = color("rgb(60, 59, 56)");
 
   prepareRegionRects();
   prepareCityMasks();
@@ -272,7 +273,6 @@ function priceToRadius(price) {
 // DRAW
 //------------------------------------------------------
 function draw() {
-  // 🔥 CSS와 동일한 sRGB 배경색 사용
   background(bgCol);
 
   drawRegions();
