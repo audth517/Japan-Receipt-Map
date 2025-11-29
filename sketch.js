@@ -282,7 +282,7 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 0.1, 5);
+  return map(logP, logMin, logMax, 0.01, 10);
 }
 
 
