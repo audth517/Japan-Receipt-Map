@@ -112,7 +112,7 @@ function setup() {
   pixelDensity(2);     // anti-alias for circles
   const c = createCanvas(CANVAS_W, CANVAS_H);  // Safari srgb option removed
 
-  bgCol = color("rgb(60, 59, 56)");
+  bgCol = color("rgb(50, 46, 45)");
 
   smooth();
   drawingContext.imageSmoothingEnabled = true;
