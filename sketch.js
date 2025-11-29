@@ -361,7 +361,7 @@ function zoomToCity(region, city) {
   const rawScale = min(availW / box.w, availH / box.h);
   const regionScale = targetViewScale;
   const minScale = regionScale;
-  const maxScale = regionScale * 2.2;
+  const maxScale = regionScale * 3.2;
   const s = constrain(rawScale, minScale, maxScale);
   targetViewScale = s;
 
