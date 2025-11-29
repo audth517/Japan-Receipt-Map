@@ -267,7 +267,7 @@ function priceToRadius(price) {
 // DRAW
 //------------------------------------------------------
 function draw() {
-  background(245);
+  background(60,59,56);
 
   drawRegions();
 
