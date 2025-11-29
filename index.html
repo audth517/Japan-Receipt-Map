@@ -9,7 +9,6 @@
   <!-- p5.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
 
-  <!-- (선택) 이미지 품질 향상 모드 -->
   <style>
     html, body {
       margin: 0;
@@ -20,6 +19,20 @@
     }
     canvas {
       display: block;
+    }
+  </style>
+
+  <style>
+    @font-face {
+      font-family: 'DepartureMono';
+      src: url('assets/fonts/DepartureMono-Regular.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+  
+    /* 제목에만 적용하고 싶을 때 커스텀 class */
+    .title-font {
+      font-family: 'DepartureMono', monospace;
     }
   </style>
 </head>
