@@ -172,6 +172,10 @@ function prepareCityMasks() {
             }
           }
         }
+        // testestset0-----------------
+        if (region === "Hokkaido" && city === "Hakodate") {
+          console.log(x, y, r, g, b, a);
+        }
       }
 
       if (pts.length > 0) {
