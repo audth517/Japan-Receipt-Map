@@ -42,6 +42,9 @@ const categoryColors = {
   Other: [180, 180, 180]
 };
 
+// 🔥 배경색(sRGB 60,59,56)을 담을 컬러 객체
+let bgCol = null;
+
 //------------------------------------------------------
 // REGION RAW COORDS (percent)
 //------------------------------------------------------
@@ -89,12 +92,16 @@ let regionRectsPx = {};
 
 function setup() {
   pixelDensity(1);
+
   const c = createCanvas(CANVAS_W, CANVAS_H);
   const ctx = c.elt.getContext("2d", { colorSpace: "srgb" });
 
   if (ctx && ctx.colorSpace !== "srgb") {
     console.warn("Canvas colorSpace not set to sRGB (Safari version too old).");
   }
+
+  // 🔥 CSS의 color(srgb 60 59 56)과 맞춘 배경색
+  bgCol = color("color(srgb 60 59 56)");
 
   prepareRegionRects();
   prepareCityMasks();
@@ -170,7 +177,7 @@ function prepareCityMasks() {
           let b = img.pixels[idx + 2];
           let a = img.pixels[idx + 3];
 
-          // 마스크 색: rgb(247,249,249)
+          // 🔥 마스크 색: rgb(60,59,56) 근처
           if (
             a > 0 &&
             Math.abs(r - 60) < 10 &&
@@ -265,7 +272,8 @@ function priceToRadius(price) {
 // DRAW
 //------------------------------------------------------
 function draw() {
-  background(60,59,56);
+  // 🔥 CSS와 동일한 sRGB 배경색 사용
+  background(bgCol);
 
   drawRegions();
 
@@ -321,11 +329,9 @@ function drawCityFocus() {
     const isFocused = (c.region === focusedRegion && c.city === focusedCity);
 
     if (isFocused) {
-      // 카테고리별 색 적용
       const col = categoryColors[c.category] || categoryColors.Other;
       fill(col[0], col[1], col[2], 220);
     } else {
-      // 다른 도시의 원은 희미하게
       fill(255, 70);
     }
 
