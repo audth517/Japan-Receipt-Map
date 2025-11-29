@@ -90,6 +90,7 @@ function preload() {
 let regionRectsPx = {};
 
 function setup() {
+  pixelDensity(1);
   createCanvas(CANVAS_W, CANVAS_H);
   pixelDensity(1);
 
