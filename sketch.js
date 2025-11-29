@@ -33,6 +33,15 @@ const SHIFT_X = 80;
 const SHIFT_Y = 0;
 const SCALE   = 0.8;
 
+const categoryColors = {
+  TP: [120, 160, 230],
+  TR: [190, 140, 220],
+  RC: [230, 120, 120],
+  CS: [140, 200, 160],
+  GS: [240, 190, 120],
+  Other: [180, 180, 180]
+};
+
 //------------------------------------------------------
 // REGION RAW COORDS (percent)
 //------------------------------------------------------
@@ -317,8 +326,11 @@ function drawCityFocus() {
     const isFocused = (c.region === focusedRegion && c.city === focusedCity);
 
     if (isFocused) {
-      fill(120, 180, 200, 240);
+      // 카테고리별 색 적용
+      const col = categoryColors[c.category] || categoryColors.Other;
+      fill(col[0], col[1], col[2], 220);
     } else {
+      // 다른 도시의 원은 희미하게
       fill(255, 70);
     }
 
