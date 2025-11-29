@@ -9,28 +9,32 @@
   <!-- p5.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
 
+  <!-- 전체 스타일 -->
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: rgb(35, 35, 34); /* 전체 배경 */
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    canvas {
-      display: block;
-    }
-  </style>
-
-  <style>
+    /* ===== CUSTOM FONT ===== */
     @font-face {
       font-family: 'DepartureMono';
       src: url('assets/fonts/DepartureMono-Regular.woff') format('woff');
       font-weight: normal;
       font-style: normal;
     }
-  
-    /* 제목에만 적용하고 싶을 때 커스텀 class */
+
+    /* ===== GLOBAL LAYOUT ===== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+
+      background-color: rgb(35, 35, 34); /* 전체 배경 */
+      font-family: 'DepartureMono', monospace; /* ★ p5 텍스트도 자동 적용됨 */
+      color: white;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* 제목/부제 같은 HTML 요소용 */
     .title-font {
       font-family: 'DepartureMono', monospace;
     }
@@ -38,7 +42,7 @@
 </head>
 
 <body>
-  <!-- p5.js automatically injects the canvas here -->
+  <!-- p5.js canvas -->
   <script src="sketch.js"></script>
 </body>
 </html>
