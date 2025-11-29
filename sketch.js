@@ -478,7 +478,7 @@ function drawUI() {
   textAlign(LEFT, TOP);
   textSize(20);
   textFont(titleFont);
-  text("Japan Receipts – Circle Constellations", 20, 20);
+  text("Japan Receipts Map", 20, 20);
   
   // 다른 글꼴로 돌아갈 때
   textFont("system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif");
