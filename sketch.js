@@ -88,6 +88,7 @@ let titleFont;
 
 function preload() {
   monoFont = loadFont("assets/fonts/DepartureMono-Regular.woff");
+  titleFont = monoFont;
   
   for (let region of REGION_NAMES) {
     regionImages[region] =
@@ -605,11 +606,9 @@ function drawUI() {
 
   textAlign(LEFT, TOP);
   textSize(20);
-  textFont(titleFont);
+
+  // DepartureMono 그대로 사용
   text("Japan Receipts Map", 20, 20);
-  
-  // 다른 글꼴로 돌아갈 때
-  textFont("system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif");
 
   textSize(13);
   if (currentMode === "overview") {
@@ -622,7 +621,6 @@ function drawUI() {
     text("Click empty: back to city\nClick another city circle: jump", 20, 48);
   }
 }
-
 
 //------------------------------------------------------
 // HOVER DETECTION (WORLD COORD)
@@ -850,8 +848,8 @@ function drawTooltip(r) {
   const corner = 6;
 
   let msg1 = `${r.region} ${r.city}`;
-  let msg2 = `${r.category} ¥${r.price}`;
-
+  let msg2 = `${r.category}  ¥${r.price}`;
+  
   const lines = [msg1, msg2];
 
   // 폭 계산
