@@ -10,6 +10,11 @@ const CITIES_BY_REGION = {
   Kyushu:   ["Fukuoka", "Ukiha"]
 };
 
+let japanAspect = 1000 / 1328; // 일본 전체의 가로/세로 비율
+let worldScale = 1;
+let worldOffsetX = 0;
+let worldOffsetY = 0;
+
 let receiptsData = null;
 let jsonLoaded = false;
 
@@ -142,18 +147,45 @@ function setup() {
 //------------------------------------------------------
 // REGION RECT CALC (SHIFT + SCALE)
 //------------------------------------------------------
+//function prepareRegionRects() {
+//  for (let region of REGION_NAMES) {
+//    const P = regionRectsPct_raw[region];
+
+//    const x = width  * P.x / 100;
+//    const y = height * P.y / 100;
+//    const w = width  * P.w / 100;
+//    const h = height * P.h / 100;
+
+//    regionRectsPx[region] = { x, y, w, h };
+//  }
+//}
+
 function prepareRegionRects() {
+  const browserAspect = width / height;
+
+  if (browserAspect > japanAspect) {
+    worldScale = height / 1600;
+    worldOffsetX = (width - JAPAN_W * worldScale) / 2;
+    worldOffsetY = 0;
+  } else {
+    // 브라우저가 더 세로로 길다 → 가로 기준 스케일
+    worldScale = width / 1000;
+    worldOffsetX = 0;
+    worldOffsetY = (height - JAPAN_H * worldScale) / 2;
+  }
+
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
 
-    const x = width  * P.x / 100;
-    const y = height * P.y / 100;
-    const w = width  * P.w / 100;
-    const h = height * P.h / 100;
+    const x = worldOffsetX + (P.x / 100 * JAPAN_W) * worldScale;
+    const y = worldOffsetY + (P.y / 100 * JAPAN_H) * worldScale;
+    const w = (P.w / 100 * JAPAN_W) * worldScale;
+    const h = (P.h / 100 * JAPAN_H) * worldScale;
 
     regionRectsPx[region] = { x, y, w, h };
   }
 }
+
 
 
 //------------------------------------------------------
@@ -756,7 +788,7 @@ function mousePressed() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  prepareRegionRects(); // 크기 바뀔 때마다 지도 위치 다시 계산
+  prepareRegionRects(); 
   resetView();
 }
 
