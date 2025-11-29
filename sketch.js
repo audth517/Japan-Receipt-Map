@@ -288,7 +288,7 @@ function resetView() {
   const availW = width  * (1 - margin * 2);
   const availH = height * (1 - margin * 2);
 
-  // 전체 일본 지도가 화면에 꽉 차게 자동 스케일
+  // 전체 일본 지도가 화면에 맞게 자동 스케일
   const s = min(availW / box.w, availH / box.h);
 
   viewScale = s;
