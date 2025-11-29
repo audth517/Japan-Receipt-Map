@@ -31,8 +31,11 @@ let focusedRegion = null;
 let focusedCity   = null;
 let focusedCategory = null;     // category within city
 
+let hoveredReceipt = null;
+
 let bgCol;
 let regionBaseScale = 1;
+let monoFont;
 
 // Canvas size (참고용 상수)
 const CANVAS_W = 1000;
@@ -84,7 +87,7 @@ let regionRectsPx = {};
 let titleFont;
 
 function preload() {
-  titleFont = loadFont('assets/fonts/DepartureMono-Regular.woff');
+  monoFont = loadFont("assets/fonts/DepartureMono-Regular.woff");
   
   for (let region of REGION_NAMES) {
     regionImages[region] =
@@ -116,14 +119,13 @@ function preload() {
 //------------------------------------------------------
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  textFont(monoFont);
   pixelDensity(2);     // anti-alias for circles
 
   bgCol = color("rgb(35, 35, 34)");
 
   smooth();
   drawingContext.imageSmoothingEnabled = true;
-
-  textFont("system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif");
 
   prepareRegionRects();
   prepareCityMasks();
@@ -434,12 +436,18 @@ function draw() {
 
   drawRegions();
 
+  hoveredReceipt = null;
+
   if (currentMode === "overview") {
     drawOverview();
   } else if (currentMode === "region") {
     drawRegionFocus();
   } else { // "city" 또는 "category"
     drawCityFocus();
+  }
+
+  if (hoveredReceipt) {
+    drawTooltip(hoveredReceipt);
   }
 
   pop();
@@ -812,4 +820,67 @@ function getJapanBounds() {
     w: maxX - minX,
     h: maxY - minY
   };
+}
+
+//------------------------------------------------------
+// 섬+지역+분류+가격 마우스 hover
+//------------------------------------------------------
+function drawReceiptsInCity(area, receipts) {
+  for (let r of receipts) {
+    let x = r.x;
+    let y = r.y;
+    let rad = r.radius;
+
+    fill(r.color);
+    noStroke();
+    ellipse(x, y, rad * 2);
+
+    if (dist(mouseX, mouseY, x, y) < rad) {
+      hoveredReceipt = r;   // r 전체 오브젝트를 기억
+    }
+  }
+
+//------------------------------------------------------
+// 섬+지역+분류+가격 text draw
+//------------------------------------------------------
+function drawTooltip(r) {
+  const pad = 10;
+  const lineH = 18;
+  const corner = 6;
+
+  let msg1 = `${r.region} ${r.city}`;
+  let msg2 = `${r.category}` `¥${r.price}`;
+
+  const lines = [msg1, msg2, msg3];
+
+  // 폭 계산
+  let w = 0;
+  for (let t of lines) {
+    w = max(w, textWidth(t));
+  }
+  w += pad * 2;
+  const h = lineH * lines.length + pad * 2;
+
+  let tx = mouseX + 15;
+  let ty = mouseY - h - 10;
+
+  // 화면 바깥 방지
+  if (tx + w > width) tx = mouseX - w - 15;
+  if (ty < 0) ty = mouseY + 20;
+
+  // Box
+  noStroke();
+  fill(0, 200);       // 반투명 검정
+  rect(tx, ty, w, h, corner);
+
+  // Text
+  fill(255);
+  textSize(13);
+  textAlign(LEFT, TOP);
+
+  let yy = ty + pad;
+  for (let t of lines) {
+    text(t, tx + pad, yy);
+    yy += lineH;
+  }
 }
