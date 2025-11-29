@@ -172,9 +172,9 @@ function prepareCityMasks() {
           // 마스크 색: rgb(247,249,249)
           if (
             a > 0 &&
-            Math.abs(r - 247) < 12 &&
-            Math.abs(g - 249) < 12 &&
-            Math.abs(b - 249) < 12
+            Math.abs(r - 60) < 10 &&
+            Math.abs(g - 59) < 10 &&
+            Math.abs(b - 56) < 10
           ) {
             if (x > safeMinX && x < safeMaxX && y > safeMinY && y < safeMaxY) {
               pts.push({ xImg: x, yImg: y });
@@ -259,7 +259,7 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 2, 22);
+  return map(logP, logMin, logMax, 1.5, 12.8);
 }
 
 
@@ -345,7 +345,7 @@ function drawCityFocus() {
 // TOOLTIP
 //------------------------------------------------------
 function drawTooltip(c) {
-  fill(0);
+  fill(254, 251, 247);
   textAlign(LEFT, TOP);
   textSize(14);
 
@@ -360,7 +360,7 @@ function drawTooltip(c) {
 // UI TEXT
 //------------------------------------------------------
 function drawUI() {
-  fill(0);
+  fill(254, 251, 247);
   noStroke();
   textAlign(LEFT, TOP);
   textSize(18);
