@@ -280,12 +280,27 @@ function priceToRadius(price) {
 // VIEW CONTROL
 //------------------------------------------------------
 function resetView() {
-  viewScale = 1;
-  viewOffsetX = 0;
-  viewOffsetY = 0;
-  targetViewScale = 1;
-  targetViewOffsetX = 0;
-  targetViewOffsetY = 0;
+  const box = getJapanBounds();
+
+  const margin = 0.15;
+  const availW = width  * (1 - margin * 2);
+  const availH = height * (1 - margin * 2);
+
+  // 전체 일본 지도가 화면에 꽉 차게 자동 스케일
+  const s = min(availW / box.w, availH / box.h);
+
+  viewScale = s;
+  targetViewScale = s;
+
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+
+  // 중앙 정렬
+  viewOffsetX = width  / 2 - s * cx;
+  viewOffsetY = height / 2 - s * cy;
+
+  targetViewOffsetX = viewOffsetX;
+  targetViewOffsetY = viewOffsetY;
 }
 
 function zoomToRegion(region) {
@@ -557,4 +572,26 @@ function mousePressed() {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   prepareRegionRects(); // 크기 바뀔 때마다 지도 위치 다시 계산
+}
+
+function getJapanBounds() {
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+
+  for (let region of REGION_NAMES) {
+    const rr = regionRectsPx[region];
+    if (!rr) continue;
+
+    minX = min(minX, rr.x);
+    minY = min(minY, rr.y);
+    maxX = max(maxX, rr.x + rr.w);
+    maxY = max(maxY, rr.y + rr.h);
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY
+  };
 }
