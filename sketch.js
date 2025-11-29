@@ -437,16 +437,25 @@ function draw() {
 
   drawRegions();
 
-  hoveredReceipt = null;
+  hoveredReceipt = null;  // 매 프레임 초기화
 
+  // 모든 원 hover 검사 (overview/region/city 모두 공통)
+  for (let c of circles) {
+    if (dist(mouseX, mouseY, c.x, c.y) < c.radius * 1.4) {
+      hoveredReceipt = c;
+    }
+  }
+
+  // 기존 view 모드에 따른 그리기
   if (currentMode === "overview") {
     drawOverview();
   } else if (currentMode === "region") {
     drawRegionFocus();
-  } else { // "city" 또는 "category"
+  } else {
     drawCityFocus();
   }
 
+  // tooltip
   if (hoveredReceipt) {
     drawTooltip(hoveredReceipt);
   }
