@@ -21,13 +21,14 @@ let regionImages = {};
 let cityMaskImages = {};
 let cityMaskPoints = {};
 
-let currentMode = "overview";   // "overview" → "region" → "category"
+let currentMode = "overview";   // "overview" → "region" → "city" → "category"
 let focusedRegion = null;
-let focusedCategory = null;     // category within region
+let focusedCity   = null;
+let focusedCategory = null;     // category within city
 
 let bgCol;
 
-// Canvas size
+// Canvas size (참고용 상수)
 const CANVAS_W = 1000;
 const CANVAS_H = 1000;
 
@@ -245,6 +246,7 @@ function processData() {
       xScreen = rr.x + (pick.xImg / iw) * rr.w;
       yScreen = rr.y + (pick.yImg / ih) * rr.h;
     } else {
+      // fallback: 섬 내부 random
       xScreen = random(rr.x, rr.x + rr.w);
       yScreen = random(rr.y, rr.y + rr.h);
     }
@@ -272,7 +274,7 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 0.005, 5);
+  return map(logP, logMin, logMax, 0.003, 5);
 }
 
 
@@ -324,6 +326,51 @@ function zoomToRegion(region) {
   regionFadeTarget = 1;
 }
 
+// 🔸 city bounding box
+function getCityBounds(region, city) {
+  const filtered = circles.filter(c => c.region === region && c.city === city);
+  if (filtered.length === 0) return null;
+
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+
+  for (let c of filtered) {
+    minX = min(minX, c.x);
+    minY = min(minY, c.y);
+    maxX = max(maxX, c.x);
+    maxY = max(maxY, c.y);
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    w: maxX - minX,
+    h: maxY - minY
+  };
+}
+
+// 🔸 city 확대
+function zoomToCity(region, city) {
+  const box = getCityBounds(region, city);
+  if (!box) return;
+
+  const margin = 0.15;
+  const availW = width  * (1 - margin * 2);
+  const availH = height * (1 - margin * 2);
+
+  const s = min(availW / box.w, availH / box.h);
+  targetViewScale = s;
+
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+
+  targetViewOffsetX = width  / 2 - s * cx;
+  targetViewOffsetY = height / 2 - s * cy;
+
+  regionFade = 1;
+  regionFadeTarget = 1;
+}
+
 function updateView() {
   viewScale = lerp(viewScale, targetViewScale, VIEW_LERP);
   viewOffsetX = lerp(viewOffsetX, targetViewOffsetX, VIEW_LERP);
@@ -351,8 +398,14 @@ function draw() {
   scale(viewScale);
 
   drawRegions();
-  if (currentMode === "overview") drawOverview();
-  else drawRegionFocus();
+
+  if (currentMode === "overview") {
+    drawOverview();
+  } else if (currentMode === "region") {
+    drawRegionFocus();
+  } else { // "city" 또는 "category"
+    drawCityFocus();
+  }
 
   pop();
 
@@ -364,7 +417,7 @@ function draw() {
 // DRAW REGIONS (PNG)
 //------------------------------------------------------
 function drawRegions() {
-  if (currentMode === "overview") return;  // ⛔ 초기에는 숨김
+  if (currentMode === "overview") return;  // 초기에는 숨김
 
   drawingContext.globalAlpha = regionFade;
 
@@ -439,17 +492,12 @@ function drawOverview() {
 
 
 //------------------------------------------------------
-// REGION FOCUS
+// REGION FOCUS (region 전체 보기)
 //------------------------------------------------------
 function drawRegionFocus() {
   if (!focusedRegion) return;
 
   const regionCircles = circles.filter(c => c.region === focusedRegion);
-
-  if (focusedCategory) {
-    const cat = regionCircles.filter(c => c.category === focusedCategory);
-    drawConnections(cat);
-  }
 
   noStroke();
   for (let c of circles) {
@@ -459,6 +507,38 @@ function drawRegionFocus() {
       continue;
     }
 
+    // region 단계에서는 category 강조 없이 동일하게
+    fill(254, 251, 247, 200);
+    ellipse(c.x, c.y, c.radius * 2.1);
+  }
+}
+
+
+//------------------------------------------------------
+// CITY FOCUS (city + city 내 category)
+//------------------------------------------------------
+function drawCityFocus() {
+  if (!focusedRegion || !focusedCity) return;
+
+  const cityCircles = circles.filter(
+    c => c.region === focusedRegion && c.city === focusedCity
+  );
+
+  if (focusedCategory) {
+    const cat = cityCircles.filter(c => c.category === focusedCategory);
+    drawConnections(cat);
+  }
+
+  noStroke();
+  for (let c of circles) {
+    // 다른 region/city는 희미하게
+    if (c.region !== focusedRegion || c.city !== focusedCity) {
+      fill(254, 251, 247, 15);
+      ellipse(c.x, c.y, c.radius * 1.4);
+      continue;
+    }
+
+    // 같은 city 내부
     if (focusedCategory && c.category === focusedCategory) {
       const col = categoryColors[c.category] || categoryColors.Other;
       fill(col[0], col[1], col[2], 230);
@@ -492,9 +572,11 @@ function drawUI() {
   if (currentMode === "overview") {
     text("Hover: region connections\nClick: zoom into region", 20, 48);
   } else if (currentMode === "region") {
-    text("Click circle: category constellation\nClick empty: reset", 20, 48);
+    text("Click circle: zoom into city\nClick empty: back to overview", 20, 48);
+  } else if (currentMode === "city") {
+    text("Click circle: category constellation (within city)\nClick empty: back to region", 20, 48);
   } else if (currentMode === "category") {
-    text("Click empty: back to region\nClick another region circle: jump", 20, 48);
+    text("Click empty: back to city\nClick another city circle: jump", 20, 48);
   }
 }
 
@@ -520,60 +602,161 @@ function getHoverCircleIndex() {
 function mousePressed() {
   const idx = getHoverCircleIndex();
 
+  // -----------------------------
+  // OVERVIEW
+  // -----------------------------
   if (currentMode === "overview") {
     if (idx !== -1) {
       const clicked = circles[idx];
       focusedRegion = clicked.region;
+      focusedCity = null;
       focusedCategory = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
     }
-  } else {
+    return;
+  }
+
+  // -----------------------------
+  // REGION MODE
+  // -----------------------------
+  if (currentMode === "region") {
     if (idx === -1) {
-      if (focusedCategory) {
-        focusedCategory = null;
-        currentMode = "region";
-      } else {
-        currentMode = "overview";
-        focusedRegion = null;
-        focusedCategory = null;
-        resetView();
-        regionFade = 0;
-        regionFadeTarget = 0;
-      }
+      // 빈 공간: overview로
+      currentMode = "overview";
+      focusedRegion = null;
+      focusedCity = null;
+      focusedCategory = null;
+      resetView();
+      regionFade = 0;
+      regionFadeTarget = 0;
       return;
     }
 
     const clicked = circles[idx];
 
     if (clicked.region !== focusedRegion) {
+      // 다른 region 클릭 → 그 region으로 점프
       focusedRegion = clicked.region;
+      focusedCity = null;
       focusedCategory = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
       return;
     }
 
+    // 같은 region → city 확대
+    focusedRegion = clicked.region;
+    focusedCity = clicked.city;
+    focusedCategory = null;
+    currentMode = "city";
+    zoomToCity(focusedRegion, focusedCity);
+    return;
+  }
+
+  // -----------------------------
+  // CITY MODE
+  // -----------------------------
+  if (currentMode === "city") {
+    if (idx === -1) {
+      // 빈 공간: region으로
+      focusedCity = null;
+      focusedCategory = null;
+      currentMode = "region";
+      zoomToRegion(focusedRegion);
+      return;
+    }
+
+    const clicked = circles[idx];
+
+    if (clicked.region !== focusedRegion) {
+      // 다른 region 클릭 → 그 region으로
+      focusedRegion = clicked.region;
+      focusedCity = null;
+      focusedCategory = null;
+      currentMode = "region";
+      zoomToRegion(focusedRegion);
+      return;
+    }
+
+    if (clicked.city !== focusedCity) {
+      // 같은 region 내 다른 city로 점프
+      focusedCity = clicked.city;
+      focusedCategory = null;
+      currentMode = "city";
+      zoomToCity(focusedRegion, focusedCity);
+      return;
+    }
+
+    // 같은 city 내부 → category 포커스 토글
     if (!focusedCategory) {
       focusedCategory = clicked.category;
       currentMode = "category";
     } else {
       if (focusedCategory === clicked.category) {
         focusedCategory = null;
-        currentMode = "region";
+        currentMode = "city";
       } else {
         focusedCategory = clicked.category;
         currentMode = "category";
       }
     }
+    return;
+  }
+
+  // -----------------------------
+  // CATEGORY MODE (city 내부)
+  // -----------------------------
+  if (currentMode === "category") {
+    if (idx === -1) {
+      // 빈 공간: 다시 city view
+      currentMode = "city";
+      focusedCategory = null;
+      return;
+    }
+
+    const clicked = circles[idx];
+
+    if (clicked.region !== focusedRegion) {
+      // 다른 region으로 점프
+      focusedRegion = clicked.region;
+      focusedCity = null;
+      focusedCategory = null;
+      currentMode = "region";
+      zoomToRegion(focusedRegion);
+      return;
+    }
+
+    if (clicked.city !== focusedCity) {
+      // 같은 region 내 다른 city로 점프
+      focusedCity = clicked.city;
+      focusedCategory = null;
+      currentMode = "city";
+      zoomToCity(focusedRegion, focusedCity);
+      return;
+    }
+
+    // 같은 city → category 토글
+    if (focusedCategory === clicked.category) {
+      focusedCategory = null;
+      currentMode = "city";
+    } else {
+      focusedCategory = clicked.category;
+      currentMode = "category";
+    }
+    return;
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   prepareRegionRects(); // 크기 바뀔 때마다 지도 위치 다시 계산
+  resetView();
 }
 
+//------------------------------------------------------
+// 전체 일본 영역 bounding box
+//------------------------------------------------------
 function getJapanBounds() {
   let minX = Infinity, minY = Infinity;
   let maxX = -Infinity, maxY = -Infinity;
