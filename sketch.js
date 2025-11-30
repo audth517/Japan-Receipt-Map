@@ -113,6 +113,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   textFont(monoFont);
   pixelDensity(2);     // anti-alias for circles
+  rectMode(CENTER);
 
   bgCol = color("rgb(251, 251, 250)");
 
@@ -510,7 +511,7 @@ function drawOverview() {
     else
       fill(55, 52, 49, 90);
 
-    ellipse(c.x, c.y, c.radius * 2.0);
+    rect(c.x, c.y, c.radius * 2.0, c.radius * 2.0);
   }
 }
 
@@ -539,7 +540,7 @@ function drawRegionFocus() {
     } else {
       fill(55, 52, 49, 30);
     }
-    ellipse(c.x, c.y, c.radius * 2.0);
+    rect(c.x, c.y, c.radius * 2.0, c.radius * 2.0);
   }
 }
 
