@@ -474,7 +474,7 @@ function drawRegions() {
 // CONNECTION LINE (CONSTELLATION)
 //------------------------------------------------------
 function drawConnections(circleList) {
-  if (!circleList || circleList.length < 2) return;
+  if (!circleList || circleList.length < 2 || !circleList[0].c) return;
 
   let cx = 0, cy = 0;
   for (let c of circleList) {
@@ -489,8 +489,10 @@ function drawConnections(circleList) {
   pts.sort((a, b) => a.ang - b.ang);
 
   const alpha = 100 + 60 * sin(frameCount * 0.06);
+
   let cat = circleList[0].c.category;
   let col = CATEGORY_COLORS[cat] || [230, 220, 250];
+
   stroke(col[0], col[1], col[2], alpha);
   strokeWeight(1.0);
   noFill();
