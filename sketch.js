@@ -527,7 +527,7 @@ function drawOverview() {
     else
       fill(254, 251, 247, 130);
 
-    ellipse(c.x, c.y, c.radius * 2.0);
+    square(c.x, c.y, c.radius * 2.0);
   }
 }
 
@@ -557,7 +557,7 @@ function drawRegionFocus() {
     else
       fill(254, 251, 247, 40);
 
-    ellipse(c.x, c.y, c.radius * 2);
+    square(c.x, c.y, c.radius * 2);
   }
 }
 
@@ -588,7 +588,7 @@ function drawCityFocus() {
     } else {
       fill(254, 251, 247, 30);
     }
-    ellipse(c.x, c.y, c.radius * 2.0);
+    square(c.x, c.y, c.radius * 2.0);
   }
 }
 
