@@ -142,17 +142,11 @@ function setup() {
 // REGION RECT CALC (SHIFT + SCALE)
 //------------------------------------------------------
 function prepareRegionRects() {
-  // 1) 일본 지도를 "정사각형 좌표계" 안에 그린다고 가정
-  //    → 브라우저가 가로든 세로든 크기가 달라져도
-  //      base = min(width, height)를 기준으로 동일 비율 유지
   const base = min(width, height);
 
-  // 2) 남는 쪽은 여백으로 두고 가운데 정렬
   const offsetX = (width  - base) / 2;
   const offsetY = (height - base) / 2;
 
-  // 3) regionRectsPct_raw의 x,y,w,h는
-  //    0~100% 기준의 "정사각형 공간"이라고 생각하고 환산
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
     if (!P) continue;
@@ -342,7 +336,7 @@ function zoomToRegion(region) {
   regionBaseScale = s;
 }
 
-// 🔸 city bounding box
+// city bounding box
 function getCityBounds(region, city) {
   const filtered = circles.filter(c => c.region === region && c.city === city);
   if (filtered.length === 0) return null;
@@ -365,7 +359,7 @@ function getCityBounds(region, city) {
   };
 }
 
-// 🔸 city 확대
+// city 확대
 function zoomToCity(region, city) {
   const box = getCityBounds(region, city);
   if (!box) return;
@@ -595,7 +589,7 @@ function drawDetailPanel() {
 
   // 패널 배경
   noStroke();
-  fill(20, 210); // 약간 어두운 반투명
+  fill(150, 210); // 중간 반투명
   rect(x0, y0, panelW, panelH, corner);
 
   // 좌우 영역 나누기 (왼쪽: 이미지, 오른쪽: 텍스트)
@@ -878,7 +872,6 @@ function getJapanBounds() {
     h: maxY - minY
   };
 }
-
 
 //------------------------------------------------------
 // (예전 버전에서 쓰던) 섬+지역+분류+가격 마우스 hover 그리기
