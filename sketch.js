@@ -22,7 +22,11 @@ let BG_COL = [251, 251, 250];
 
 let receiptsData = null;
 let jsonLoaded = false;
+
 let circles = [];
+let minPrice = Infinity;
+let maxPrice = 0;
+
 let regionImages = {};
 let cityMaskImages = {};
 let cityMaskPoints = {};
@@ -37,8 +41,9 @@ let focusedCategory = null;
 
 let regionBaseScale = 1;
 
+
 //------------------------------------------------------
-// VIEW / CAMERA
+// VIEW
 //------------------------------------------------------
 let viewScale = 1;
 let viewOffsetX = 0;
@@ -48,22 +53,20 @@ let targetViewScale = 1;
 let targetViewOffsetX = 0;
 let targetViewOffsetY = 0;
 
-const VIEW_LERP = 0.1;
-
 let regionFade = 0;
 let regionFadeTarget = 0;
 
+const VIEW_LERP = 0.1;
+
 let regionRectsPx = {};
 
-function rectPct(x, y, w, h) {
-  return {x, y, w, h};
-}
+function rectPct(x,y,w,h){ return {x,y,w,h}; }
 
 let regionRectsPct_raw = {
-  Hokkaido: rectPct(47.5, 0.0, 27.7, 27.8),
+  Hokkaido: rectPct(47.5, 0,    27.7, 27.8),
   Honshu:   rectPct(7.1,  26.9, 54.6, 55.6),
   Shikoku:  rectPct(13.7, 77.2, 14.4, 11.3),
-  Kyushu:   rectPct(0.0,  80.9, 13.9, 19.0)
+  Kyushu:   rectPct(0,    80.9, 13.9, 19.0)
 };
 
 
@@ -72,9 +75,8 @@ let regionRectsPct_raw = {
 //------------------------------------------------------
 function preload() {
 
-  // ⛔ woff 사용 금지
-  // monoFont = loadFont("assets/fonts/AnonymiceProNerdFontMono-Bold.woff");
-  // textFont("ReceiptMono");
+  // ⚠ 폰트 제거 (woff 지원 X)
+  // monoFont = loadFont();
 
   for (let region of REGION_NAMES) {
     regionImages[region] =
@@ -91,12 +93,8 @@ function preload() {
 
   receiptsData = loadJSON(
     "data/receipts.json",
-    (result) => { receiptsData = result; jsonLoaded = true; },
-    (err) => {
-      fetch("data/receipts.json")
-        .then(r => r.json())
-        .then(json => { receiptsData = json; jsonLoaded = true; });
-    }
+    (result)=>{ receiptsData=result; jsonLoaded=true; },
+    ()=>{ fetch("data/receipts.json").then(r=>r.json()).then(j=>{ receiptsData=j; jsonLoaded=true; }); }
   );
 }
 
@@ -110,6 +108,9 @@ function setup() {
   let canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent(holder);
 
+  // 폰트 제거
+  // textFont(monoFont);
+
   prepareRegionRects();
 
   if (jsonLoaded) {
@@ -118,21 +119,11 @@ function setup() {
   }
 
   resetView();
-
-  // lines UI
-  const block = document.getElementById("category-lines");
-  for (let k in CATEGORY_COLORS) {
-    let div = document.createElement("div");
-    div.style.width = "80px";
-    div.style.height = "4px";
-    div.style.background = `rgb(${CATEGORY_COLORS[k][0]},${CATEGORY_COLORS[k][1]},${CATEGORY_COLORS[k][2]})`;
-    block.appendChild(div);
-  }
 }
 
 
 //------------------------------------------------------
-// REGION RECT CALC
+// REGION RECT
 //------------------------------------------------------
 function prepareRegionRects() {
   const base = min(width, height);
@@ -141,11 +132,42 @@ function prepareRegionRects() {
 
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
-    const x = offsetX + base * (P.x / 100);
-    const y = offsetY + base * (P.y / 100);
-    const w = base * (P.w / 100);
-    const h = base * (P.h / 100);
-    regionRectsPx[region] = { x, y, w, h };
+    regionRectsPx[region] = {
+      x: offsetX + base*(P.x/100),
+      y: offsetY + base*(P.y/100),
+      w: base*(P.w/100),
+      h: base*(P.h/100)
+    };
+  }
+}
+
+
+//------------------------------------------------------
+// CITY MASK
+//------------------------------------------------------
+function prepareCityMasks(){
+  cityMaskPoints={};
+
+  for(let region of REGION_NAMES){
+    cityMaskPoints[region]={};
+
+    for(let city of CITIES_BY_REGION[region]){
+      const img = cityMaskImages[region][city];
+      if(!img) continue;
+
+      img.loadPixels();
+      const pts=[];
+      const iw=img.width, ih=img.height;
+
+      for(let y=0;y<ih;y++){
+        for(let x=0;x<iw;x++){
+          const idx=4*(y*iw+x);
+          if(img.pixels[idx+3]>0){ pts.push({xImg:x,yImg:y}); }
+        }
+      }
+
+      if(pts.length>0) cityMaskPoints[region][city]=pts;
+    }
   }
 }
 
@@ -153,81 +175,93 @@ function prepareRegionRects() {
 //------------------------------------------------------
 // PROCESS DATA
 //------------------------------------------------------
-let minPrice = Infinity;
-let maxPrice = 0;
+function processData(){
 
-function processData() {
-  for (let r of receiptsData) {
-    const p = Number(r.price);
-    if (p > 0) {
-      minPrice = min(minPrice, p);
-      maxPrice = max(maxPrice, p);
-    }
+  for(let r of receiptsData){
+    const p=Number(r.price);
+    if(p>0){ minPrice=min(minPrice,p); maxPrice=max(maxPrice,p); }
   }
 
-  circles = [];
+  for(let r of receiptsData){
+    const region=r.region;
+    const city=r.city;
+    const rr=regionRectsPx[region];
+    const pts=cityMaskPoints?.[region]?.[city];
 
-  for (let r of receiptsData) {
-    const region = r.region;
-    const city = r.city;
-    const rr = regionRectsPx[region];
-    const pts = cityMaskPoints?.[region]?.[city];
+    let xScreen,yScreen;
 
-    let xScreen, yScreen;
-
-    if (pts && pts.length > 0) {
-      const img = cityMaskImages[region][city];
-      const iw = img.width;
-      const ih = img.height;
+    if(pts && pts.length>0){
       const pick = random(pts);
-
-      xScreen = rr.x + (pick.xImg / iw) * rr.w;
-      yScreen = rr.y + (pick.yImg / ih) * rr.h;
-
-    } else {
-      xScreen = random(rr.x, rr.x + rr.w);
-      yScreen = random(rr.y, rr.y + rr.h);
+      xScreen = rr.x + (pick.xImg / cityMaskImages[region][city].width) * rr.w;
+      yScreen = rr.y + (pick.yImg / cityMaskImages[region][city].height) * rr.h;
+    }else{
+      xScreen = random(rr.x, rr.x+rr.w);
+      yScreen = random(rr.y, rr.y+rr.h);
     }
 
     circles.push({
-      id: r.id,
-      filename: r.filename,
+      id:r.id,
+      filename:r.filename,
       region,
       city,
-      category: r.category,
-      price: Number(r.price),
-      x: xScreen,
-      y: yScreen,
-      radius: priceToRadius(Number(r.price))
+      category:r.category,
+      price:r.price,
+      x:xScreen,
+      y:yScreen,
+      radius:priceToRadius(r.price)
     });
   }
 }
 
-function priceToRadius(price) {
-  const p = max(1, price);
-  const logMin = Math.log(minPrice);
-  const logMax = Math.log(maxPrice);
-  const logP = Math.log(p);
-  return map(logP, logMin, logMax, 0.003, 5);
+function priceToRadius(p){
+  const logMin=Math.log(minPrice);
+  const logMax=Math.log(maxPrice);
+  const logP=Math.log(p);
+  return map(logP,logMin,logMax,0.003,5);
 }
 
 
 //------------------------------------------------------
-// DRAW LOOP
+// VIEW CONTROL
 //------------------------------------------------------
-function draw() {
+function resetView(){
+  const box=getJapanBounds();
+  const margin=0.05;
+
+  const availW=width*(1-2*margin);
+  const availH=height*(1-2*margin);
+  const s=min(availW/box.w,availH/box.h);
+
+  viewScale=s;
+  targetViewScale=s;
+
+  const cx=box.x+box.w/2;
+  const cy=box.y+box.h/2;
+
+  viewOffsetX=width/2 - s*cx;
+  viewOffsetY=height/2 - s*cy;
+
+  targetViewOffsetX=viewOffsetX;
+  targetViewOffsetY=viewOffsetY;
+}
+
+
+//------------------------------------------------------
+// DRAW
+//------------------------------------------------------
+function draw(){
   background(BG_COL);
 
   updateView();
 
   push();
-  translate(viewOffsetX, viewOffsetY);
+  translate(viewOffsetX,viewOffsetY);
   scale(viewScale);
 
   drawRegions();
 
-  if (currentMode === "overview") drawOverview();
-  else if (currentMode === "region") drawRegionFocus();
+  if(currentMode==="overview") drawOverview();
+  else if(currentMode==="region") drawRegionFocus();
   else drawCityFocus();
 
   pop();
@@ -238,29 +272,29 @@ function draw() {
 
 
 //------------------------------------------------------
-// DRAW REGIONS
+// WINDOW RESIZE
 //------------------------------------------------------
-function drawRegions() {
-  if (currentMode === "overview") return;
-
-  drawingContext.globalAlpha = regionFade;
-
-  imageMode(CORNER);
-  for (let region of REGION_NAMES) {
-    const img = regionImages[region];
-    const rr = regionRectsPx[region];
-    image(img, rr.x, rr.y, rr.w, rr.h);
-  }
-
-  drawingContext.globalAlpha = 1;
+function windowResized(){
+  resizeCanvas(windowWidth,windowHeight);
+  prepareRegionRects();
+  resetView();
 }
 
 
 //------------------------------------------------------
-// WINDOW RESIZE
+// JAPAN BOUNDS
 //------------------------------------------------------
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  prepareRegionRects();
-  resetView();
+function getJapanBounds(){
+  let minX=Infinity,minY=Infinity;
+  let maxX=-Infinity,maxY=-Infinity;
+
+  for(let region of REGION_NAMES){
+    const rr=regionRectsPx[region];
+    minX=min(minX,rr.x);
+    minY=min(minY,rr.y);
+    maxX=max(maxX,rr.x+rr.w);
+    maxY=max(maxY,rr.y+rr.h);
+  }
+
+  return { x:minX, y:minY, w:maxX-minX, h:maxY-minY };
 }
