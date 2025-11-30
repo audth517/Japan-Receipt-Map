@@ -679,18 +679,9 @@ function drawUI() {
   textAlign(LEFT, TOP);
   textSize(20);
 
-  text("Japan Receipts Map", 20, 20);
-
   textSize(13);
 
-  if (currentMode === "overview") {
-    text(
-      "Hover: see region constellation\n" +
-      "Click circle: zoom into region\n" +
-      "Double-click circle: show receipt detail",
-      20, 48
-    );
-  } else if (currentMode === "region") {
+  if (currentMode === "region") {
     text(
       "Click circle: zoom into city\n" +
       "Click empty: back to overview\n" +
