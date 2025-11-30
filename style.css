@@ -71,8 +71,8 @@ body {
       to right,
       rgb(55, 52, 49) 0,
       rgb(55, 52, 49) 15px,
-      transparent 150px,
-      transparent 210px
+      transparent 15px,
+      transparent 19px
    );
 
    margin-top: 20px;
