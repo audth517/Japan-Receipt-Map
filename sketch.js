@@ -60,8 +60,6 @@ let regionRectsPct_raw = {
 
 let bgCol;
 
-
-
 //------------------------------------------------------
 // PRELOAD
 //------------------------------------------------------
@@ -91,13 +89,13 @@ function preload() {
   );
 }
 
-
-
 //------------------------------------------------------
 // SETUP
 //------------------------------------------------------
 function setup() {
-  createCanvas(windowWidth, windowHeight);  // fullscreen
+  let container = document.getElementById("map-container");
+  let c = createCanvas(container.clientWidth, container.clientHeight);
+  c.parent("map-container");
   pixelDensity(2);
 
   textFont(monoFont);
@@ -122,29 +120,24 @@ function setup() {
   }
 }
 
-
-
 //------------------------------------------------------
 // LAYOUT: Region Rects
 //------------------------------------------------------
 function prepareRegionRects() {
   const base = min(width, height);
-  const offsetX = (width  - base) / 2;
-  const offsetY = (height - base) / 2;
 
-  const uiLeft = 420;  // left UI width → push map to right
+  const offsetX = (width - base) / 2;
+  const offsetY = (height - base) / 2;
 
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
-    const x = offsetX + uiLeft + base*(P.x/100);
+    const x = offsetX + base*(P.x/100);
     const y = offsetY + base*(P.y/100);
     const w = base*(P.w/100);
     const h = base*(P.h/100);
     regionRectsPx[region] = {x,y,w,h};
   }
 }
-
-
 
 //------------------------------------------------------
 // PREP CITY MASKS
@@ -187,8 +180,6 @@ function prepareCityMasks() {
     }
   }
 }
-
-
 
 //------------------------------------------------------
 // PROCESS DATA (Receipts)
@@ -243,8 +234,6 @@ function processData() {
   }
 }
 
-
-
 //------------------------------------------------------
 // PRICE→RADIUS
 //------------------------------------------------------
@@ -255,8 +244,6 @@ function priceToRadius(price){
   const Lp = Math.log(p);
   return map(Lp,Lmin,Lmax,3,10);
 }
-
-
 
 //------------------------------------------------------
 // VIEW
@@ -280,7 +267,6 @@ function resetView() {
   targetViewOffsetY=viewOffsetY;
 }
 
-
 function zoomToRegion(region){
   const rr=regionRectsPx[region];
   if(!rr)return;
@@ -302,7 +288,6 @@ function zoomToRegion(region){
   regionFade=0;
   regionFadeTarget=1;
 }
-
 
 function zoomToCity(region, city) {
   const box = getCityBounds(region, city);
@@ -329,8 +314,6 @@ function zoomToCity(region, city) {
   regionFadeTarget=1;
 }
 
-
-
 function updateView() {
   viewScale=lerp(viewScale,targetViewScale, VIEW_LERP);
   viewOffsetX=lerp(viewOffsetX,targetViewOffsetX, VIEW_LERP);
@@ -338,19 +321,12 @@ function updateView() {
   regionFade=lerp(regionFade, regionFadeTarget, 0.08);
 }
 
-
-
 //------------------------------------------------------
 // DRAW
 //------------------------------------------------------
 function draw(){
   background(bgCol);
-
-  // 🔥 draw UI left panel & header
-  drawStaticUIPanel();
-
-  // Map transform
-  updateView();
+  
   push();
   translate(viewOffsetX, viewOffsetY);
   scale(viewScale);
@@ -364,115 +340,6 @@ function draw(){
   pop();
 
   drawDetailPanel();
-  drawFooter();
-}
-
-
-
-//------------------------------------------------------
-// STATIC UI PANEL (Left)
-//------------------------------------------------------
-function drawStaticUIPanel() {
-  push();
-  fill(55,52,49);
-  noStroke();
-  textAlign(LEFT,TOP);
-
-  // Title
-  textSize(24);
-  text("[Japan Receipt Map]", 60, 40);
-
-  textSize(14);
-  text("From 230201 to 250512", 60, 80);
-
-  // dashed
-  stroke(55,52,49);
-  strokeWeight(1);
-  drawingContext.setLineDash([6,6]);
-  line(60,115, width-60,115);
-  drawingContext.setLineDash([]);
-
-  // Introduction
-  noStroke();
-  textSize(16);
-  text("Introduction",60,145);
-
-  textSize(12);
-  text(
-    "Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam\n"+
-    "nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat\n"+
-    "volutpat. Ut wisi enim ad minim veniam",
-    60,175
-  );
-
-  text(
-    "Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam\n"+
-    "nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat\n"+
-    "volutpat. Ut wisi enim ad minim veniam",
-    width/2 - 100,175
-  );
-
-  // dashed
-  stroke(55,52,49);
-  drawingContext.setLineDash([6,6]);
-  line(60,275, width-60,275);
-  drawingContext.setLineDash([]);
-
-  // HOW TO READ
-  noStroke();
-  textSize(16);
-  text("How To Read",60,300);
-
-  textSize(12);
-  text("One Purchasing",60,330);
-
-  fill(55,52,49);
-  rect(180,328,10,10);
-
-  text("Price: ¥10,000  ¥1,000  ¥100", 60,360);
-
-  // price squares
-  for(let i=0;i<3;i++){
-    let s=14-i*3;
-    rect(230 + i*20, 358 + (14-s)/2, s, s);
-  }
-
-  // Categories
-  let cats=[
-    "Convenient Store",
-    "Goods Shop",
-    "Restaurant & Cafe",
-    "Transportation",
-    "Tourism"
-  ];
-
-  let baseY=400;
-  for(let i=0;i<cats.length;i++){
-    text(cats[i],60, baseY+i*28);
-    rect(180, baseY+i*28+3, 12,12);
-  }
-
-  // dashed bottom
-  stroke(55,52,49);
-  drawingContext.setLineDash([6,6]);
-  line(60, baseY+cats.length*28+20, width-60, baseY+cats.length*28+20);
-  drawingContext.setLineDash([]);
-
-  pop();
-}
-
-//------------------------------------------------------
-// FOOTER
-//------------------------------------------------------
-function drawFooter() {
-  push();
-  fill(55,52,49);
-  noStroke();
-  textAlign(CENTER,BOTTOM);
-  textSize(12);
-  text("336 Receipts                  Soyoung Myeong                    Japan Trip",
-       width/2, height-20);
-  pop();
 }
 
 //------------------------------------------------------
@@ -829,7 +696,9 @@ function doubleClicked(){
 // WINDOW RESIZE
 //------------------------------------------------------
 function windowResized(){
-  resizeCanvas(windowWidth,windowHeight);
+  let container = document.getElementById("map-container");
+  resizeCanvas(container.clientWidth, container.clientHeight);
+
   prepareRegionRects();
   resetView();
 }
