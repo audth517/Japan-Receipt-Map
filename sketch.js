@@ -475,35 +475,41 @@ function drawRegions() {
 // CONNECTION LINE (CONSTELLATION)
 //------------------------------------------------------
 function drawConnections(circleList) {
-  if (!circleList || circleList.length < 2 || !circleList[0].c) return;
+  if (!circleList || circleList.length < 2) return;
+
+  const rawCircles = circleList.map(obj => obj.c);
 
   let cx = 0, cy = 0;
-  for (let c of circleList) {
-    cx += c.x; cy += c.y;
+  for (let c of rawCircles) {
+    cx += c.x;
+    cy += c.y;
   }
-  cx /= circleList.length;
-  cy /= circleList.length;
+  cx /= rawCircles.length;
+  cy /= rawCircles.length;
 
-  let pts = circleList.map(c => ({
-    c, ang: atan2(c.y - cy, c.x - cx)
+  let pts = rawCircles.map(c => ({
+    c,
+    ang: atan2(c.y - cy, c.x - cx)
   }));
+
   pts.sort((a, b) => a.ang - b.ang);
 
   const alpha = 100 + 60 * sin(frameCount * 0.06);
 
-  let cat = circleList[0].c.category;
-  let col = CATEGORY_COLORS[cat] || [230, 220, 250];
+  const cat = pts[0].c.category;
+  const col = CATEGORY_COLORS[cat] || [230, 220, 250];
 
   stroke(col[0], col[1], col[2], alpha);
   strokeWeight(1.0);
   noFill();
 
   beginShape();
-  for (let p of pts) vertex(p.c.x, p.c.y);
+  for (let p of pts) {
+    vertex(p.c.x, p.c.y);
+  }
   vertex(pts[0].c.x, pts[0].c.y);
   endShape();
 }
-
 
 //------------------------------------------------------
 // OVERVIEW
@@ -516,9 +522,8 @@ function drawOverview() {
 
   if (hoverRegion) {
     const regionCircles = circles.filter(c => c.region === hoverRegion);
-    const list = regionCircles.map(c => ({ c }));
 
-    drawConnections(list);
+    drawConnections(regionCircles.map(c => ({ c })));
   }
 
   noStroke();
@@ -546,19 +551,19 @@ function drawRegionFocus() {
       const sameCity = circles.filter(
         c => c.region === focusedRegion && c.city === hovered.city
       );
-      const list = sameCity.map(c => ({ c }));
-      drawConnections(list);
+
+      drawConnections(sameCity.map(c => ({ c })));
     }
   }
 
   noStroke();
   for (let c of circles) {
-    if (c.region === focusedRegion) {
+    if (c.region === focusedRegion)
       fill(254, 251, 247, 230);
-    } else {
+    else
       fill(254, 251, 247, 40);
-    }
-    ellipse(c.x, c.y, c.radius * 2.0);
+
+    ellipse(c.x, c.y, c.radius * 2);
   }
 }
 
