@@ -1,0 +1,75 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* 스크롤 제거 */
+  font-family: 'ReceiptMono', monospace;
+  background: rgb(251,251,250);
+}
+
+#layout-container {
+  display: flex;
+  height: calc(100% - 40px); /* footer 제외 */
+  padding: 20px;
+  gap: 30px;
+  box-sizing: border-box;
+}
+
+/* LEFT PANEL */
+#left-panel {
+  width: 380px;
+  min-width: 330px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.column {
+  columns: 1;
+}
+
+/* 반응형: 화면이 넓을 때 두 칼럼 */
+@media (min-width: 1500px) {
+  .column {
+    columns: 2;
+    column-gap: 40px;
+  }
+}
+
+/* dashed line */
+hr.dash {
+  border: none;
+  border-top: 1px dashed #373431;
+  margin: 12px 0;
+}
+
+/* dots */
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: #373431;
+  margin-left: 10px;
+}
+
+.price-dots .p10 { width: 14px; height: 14px; }
+.price-dots .p1  { width: 10px; height: 10px; }
+.price-dots .p0  { width: 6px;  height: 6px; }
+
+/* MAP CONTAINER */
+#map-container {
+  flex: 1;
+  position: relative;
+}
+
+/* FOOTER */
+footer {
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px;
+  align-items: center;
+  font-size: 14px;
+  color: #373431;
+  background: rgb(251,251,250);
+}
