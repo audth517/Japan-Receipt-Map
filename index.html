@@ -7,79 +7,22 @@
   <!-- p5.js -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
 
-  <!-- Custom Font -->
+  <!-- Font -->
   <style>
     @font-face {
       font-family: 'ReceiptMono';
-      src: url('assets/fonts/AnonymiceProNerdFontMono-Bold.woff') format('woff');
+      src: url('assets/fonts/DepartureMono-Regular.woff') format('woff');
       font-weight: normal;
       font-style: normal;
     }
   </style>
+
 </head>
 
 <body>
 
-  <!-- Layout wrapper -->
-  <div id="layout">
-
-    <!-- Title section -->
-    <header id="header">
-      <h1 id="title">Japan Receipt Map</h1>
-      <h2 id="subtitle">From 230201 to 250512</h2>
-      <div class="dash-line"></div>
-    </header>
-
-    <!-- Introduction section -->
-    <section id="intro-section">
-      <div class="intro left">
-        <p>
-          This project visualizes every receipt I collected across Japan,
-          mapping spending patterns, movement, and categories across regions.
-        </p>
-        <p>
-          Each square represents a single purchase.
-          The size of the square reflects the price, and the color indicates a category.
-        </p>
-      </div>
-
-      <div class="intro right">
-        <p>
-          Receipts act as micro-time capsules—capturing not only what was bought,
-          but when, where, and why. This map reconstructs my journey
-          through the shapes, sizes, and distribution of spending.
-        </p>
-      </div>
-    </section>
-
-    <!-- How to read -->
-    <section id="how">
-      <h3>How To Read</h3>
-
-      <div id="legend">
-        <div class="legend-block">
-          <div class="legend-square"></div>
-          <span>One Purchase</span>
-        </div>
-
-        <div class="legend-block">
-          <div class="legend-square demo-price"></div>
-          <span>Price comparison: ¥10,000 / ¥1,000 / ¥100</span>
-        </div>
-
-        <div id="category-lines">
-          <!-- JS will insert category color lines -->
-        </div>
-      </div>
-    </section>
-
-    <!-- MAP SECTION -->
-    <section id="map-section">
-      <div id="canvas-holder"></div>
-      <div id="receipt-info"></div>
-    </section>
-
-  </div>
+  <!-- p5 canvas attaches here -->
+  <div id="canvas-holder"></div>
 
   <script src="sketch.js"></script>
 </body>
