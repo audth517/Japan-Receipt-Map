@@ -113,9 +113,19 @@ function preload() {
 // SETUP
 //------------------------------------------------------
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  // 1) 캔버스를 넣을 div 가져오기
+  const holder = document.getElementById("canvas-holder");
+
+  // 2) div의 실제 현재 크기 사용 (비율 고정 없음)
+  const w = holder.clientWidth;
+  const h = holder.clientHeight;
+
+  // 3) 반응형 캔버스 생성 + 부모 div에 attach
+  let canvas = createCanvas(w, h);
+  canvas.parent("canvas-holder");
+
   textFont(monoFont);
-  pixelDensity(2);     // anti-alias for circles
+  pixelDensity(2);
   rectMode(CENTER);
 
   bgCol = color("rgb(251, 251, 250)");
@@ -123,6 +133,7 @@ function setup() {
   smooth();
   drawingContext.imageSmoothingEnabled = true;
 
+  // 레이아웃용 계산들 (장소/지역 배치, 초기 카메라 세팅)
   prepareRegionRects();
   prepareCityMasks();
   resetView();
@@ -840,8 +851,12 @@ function doubleClicked() {
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  prepareRegionRects(); 
+  const holder = document.getElementById("canvas-holder");
+  const w = holder.clientWidth;
+  const h = holder.clientHeight;
+
+  resizeCanvas(w, h);
+  prepareRegionRects();
   resetView();
 }
 
