@@ -536,7 +536,7 @@ function drawRegionFocus() {
       drawConnections(sameCat);
     }
   }
-
+}
 
 //------------------------------------------------------
 // CITY FOCUS (city)
