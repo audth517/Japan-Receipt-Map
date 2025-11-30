@@ -15,10 +15,51 @@
       font-weight: normal;
       font-style: normal;
     }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: 'ReceiptMono', monospace;  /* ★ 추가 */
+      background: rgb(251, 251, 250);
+      color: rgb(55, 52, 49);
+      font-family: 'ReceiptMono', monospace;
+    }
+
+    /* Layout wrapper */
+    #layout {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px;  
+    }
+
+    /* Title */
+    #title {
+      text-align: center;
+      font-size: 25px;
+      margin-bottom: 6px;
+      color: rgb(55, 52, 49);
+    }
+
+    /* Subtitle */
+    #subtitle {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: rgb(55, 52, 49);
+    }
+
+    /* Dashed line */
+    .dash-line {
+      border-bottom: 1px dashed rgb(55, 52, 49);
+      margin: 25px 0;
+    }
+
+    /* Canvas holder */
+    #canvas-holder {
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
   </style>
 
@@ -26,8 +67,18 @@
 
 <body>
 
-  <!-- p5 canvas attaches here -->
-  <div id="canvas-holder"></div>
+  <div id="layout">
+
+    <h1 id="title">Japan Receipt Map</h1>
+
+    <h2 id="subtitle">From 230201 to 250512</h2>
+
+    <div class="dash-line"></div>
+
+    <!-- p5 canvas attaches here -->
+    <div id="canvas-holder"></div>
+
+  </div>
 
   <script src="sketch.js"></script>
 </body>
