@@ -1,0 +1,98 @@
+/* GLOBAL */
+body {
+  margin: 0;
+  padding: 0;
+  background: rgb(251, 251, 250);
+  color: rgb(55, 52, 49);
+  font-family: 'ReceiptMono', monospace;
+}
+
+#layout {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+/* HEADER */
+#title {
+  text-align: center;
+  font-size: 40px;
+  margin-bottom: 5px;
+}
+
+#subtitle {
+  text-align: center;
+  font-size: 20px;
+  opacity: 0.7;
+}
+
+.dash-line {
+  border-bottom: 1px dashed rgb(55, 52, 49);
+  margin: 25px 0;
+}
+
+/* INTRODUCTION SECTION */
+#intro-section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.intro {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* HOW TO READ */
+#how h3 {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+#legend {
+  padding-left: 0;
+}
+
+.legend-block {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.legend-square {
+  width: 20px;
+  height: 20px;
+  background: rgb(55, 52, 49);
+  margin-right: 12px;
+}
+
+.demo-price {
+  width: 60px;
+  height: 20px;
+  background: rgb(55, 52, 49);
+}
+
+#category-lines {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* MAP SECTION */
+#map-section {
+  display: flex;
+  margin-top: 50px;
+}
+
+#canvas-holder {
+  flex: 3;
+}
+
+#receipt-info {
+  flex: 1;
+  padding-left: 30px;
+  min-height: 300px;
+}
