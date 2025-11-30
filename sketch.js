@@ -81,7 +81,7 @@ let SIZE_SCALE_CITY     = 0.45;  // city (조금 크게 또는 동일)
 let titleFont;
 
 function preload() {
-  monoFont = loadFont("assets/fonts/IosevkaNerdFontPropo-Regular.woff");
+  monoFont = loadFont("assets/fonts/IosevkaNerdFontPropo-Medium.woff");
   titleFont = monoFont;
   
   for (let region of REGION_NAMES) {
