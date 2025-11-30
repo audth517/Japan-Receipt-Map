@@ -71,6 +71,9 @@ let regionRectsPct_raw = {
 
 let regionRectsPx = {};
 
+let SIZE_SCALE_OVERVIEW = 1.0;  // whole map
+let SIZE_SCALE_REGION   = 0.45; // island (절반 이하)
+let SIZE_SCALE_CITY     = 0.9;  // city (조금 크게 또는 동일)
 
 //------------------------------------------------------
 // PRELOAD
@@ -282,7 +285,7 @@ function priceToRadius(price) {
   const logMin = Math.log(minPrice);
   const logMax = Math.log(maxPrice);
   const logP = Math.log(p);
-  return map(logP, logMin, logMax, 0.003, 5);
+  return map(logP, logMin, logMax, 0.002, 6);
 }
 
 
@@ -511,7 +514,8 @@ function drawOverview() {
     else
       fill(55, 52, 49, 90);
 
-    rect(c.x, c.y, c.radius * 2.0, c.radius * 2.0);
+    const s = SIZE_SCALE_OVERVIEW;
+    rect(c.x, c.y, (c.radius * 2.0) * s, (c.radius * 2.0) * s);
   }
 }
 
@@ -540,7 +544,8 @@ function drawRegionFocus() {
     } else {
       fill(55, 52, 49, 30);
     }
-    rect(c.x, c.y, c.radius * 2.0, c.radius * 2.0);
+    const s = SIZE_SCALE_REGION;
+    rect(c.x, c.y, (c.radius * 2.0) * s, (c.radius * 2.0) * s);
   }
 }
 
@@ -570,7 +575,8 @@ function drawCityFocus() {
     } else {
       fill(55, 52, 49, 30);
     }
-    rect(c.x, c.y, c.radius * 2.0, c.radius * 2.0);
+    const s = SIZE_SCALE_CITY;
+    rect(c.x, c.y, (c.radius * 2.0) * s, (c.radius * 2.0) * s);
   }
 }
 
