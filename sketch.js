@@ -536,6 +536,15 @@ function drawRegionFocus() {
       drawConnections(sameCat);
     }
   }
+  noStroke();
+  for (let c of circles) {
+    if (c.region === focusedRegion) {
+      fill(254, 251, 247, 230);
+    } else {
+      fill(254, 251, 247, 40);
+    }
+    ellipse(c.x, c.y, c.radius * 2.0);
+  }
 }
 
 //------------------------------------------------------
@@ -556,6 +565,15 @@ function drawCityFocus() {
       );
       drawConnections(sameCat);
     }
+  }
+  noStroke();
+  for (let c of circles) {
+    if (c.region === focusedRegion && c.city === focusedCity) {
+      fill(254, 251, 247, 230);
+    } else {
+      fill(254, 251, 247, 30);
+    }
+    ellipse(c.x, c.y, c.radius * 2.0);
   }
 }
 
