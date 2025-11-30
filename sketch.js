@@ -26,12 +26,13 @@ let regionImages = {};
 let cityMaskImages = {};
 let cityMaskPoints = {};
 
-let currentMode = "overview";   // "overview" → "region" → "city" → "category"
+let currentMode = "overview";   // "overview" → "region" → "city"
 let focusedRegion = null;
 let focusedCity   = null;
-let focusedCategory = null;     // category within city
 
-let hoveredReceipt = null;
+// ★ 더블클릭으로 선택된 영수증
+let selectedReceipt = null;
+let receiptImages = {};  // filename → { loading, img, error }
 
 let bgCol;
 let regionBaseScale = 1;
@@ -40,16 +41,6 @@ let monoFont;
 // Canvas size (참고용 상수)
 const CANVAS_W = 1000;
 const CANVAS_H = 1000;
-
-// Constellation style category colors
-const categoryColors = {
-  TP: [120, 160, 230],
-  TR: [190, 140, 220],
-  RC: [230, 120, 120],
-  CS: [140, 200, 160],
-  GS: [240, 190, 120],
-  Other: [180, 180, 180]
-};
 
 // ---------- VIEW / CAMERA ----------
 let viewScale = 1;
@@ -150,19 +141,6 @@ function setup() {
 //------------------------------------------------------
 // REGION RECT CALC (SHIFT + SCALE)
 //------------------------------------------------------
-//function prepareRegionRects() {
-//  for (let region of REGION_NAMES) {
-//    const P = regionRectsPct_raw[region];
-
-//    const x = width  * P.x / 100;
-//    const y = height * P.y / 100;
-//    const w = width  * P.w / 100;
-//    const h = height * P.h / 100;
-
-//    regionRectsPx[region] = { x, y, w, h };
-//  }
-//}
-
 function prepareRegionRects() {
   // 1) 일본 지도를 "정사각형 좌표계" 안에 그린다고 가정
   //    → 브라우저가 가로든 세로든 크기가 달라져도
@@ -261,6 +239,8 @@ function processData() {
     const rr = regionRectsPx[region];
     const pts = cityMaskPoints?.[region]?.[city];
 
+    if (!rr) continue;
+
     let xScreen, yScreen;
 
     if (pts && pts.length > 0) {
@@ -317,7 +297,8 @@ function priceToRadius(price) {
 function resetView() {
   const box = getJapanBounds();
 
-  const margin = 0.15;
+  // ★ 처음 지도 더 크게: margin을 0.05로 줄여서 화면을 더 꽉 채우게
+  const margin = 0.05;
   const availW = width  * (1 - margin * 2);
   const availH = height * (1 - margin * 2);
 
@@ -437,16 +418,9 @@ function draw() {
 
   drawRegions();
 
-  hoveredReceipt = null;  // 매 프레임 초기화
+  // ★ hover 텍스트는 완전히 제거
+  // 원 그리기 & 연결선만 사용
 
-  // 모든 원 hover 검사 (overview/region/city 모두 공통)
-  for (let c of circles) {
-    if (dist(mouseX, mouseY, c.x, c.y) < c.radius * 1.4) {
-      hoveredReceipt = c;
-    }
-  }
-
-  // 기존 view 모드에 따른 그리기
   if (currentMode === "overview") {
     drawOverview();
   } else if (currentMode === "region") {
@@ -455,13 +429,12 @@ function draw() {
     drawCityFocus();
   }
 
-  // tooltip
-  if (hoveredReceipt) {
-    drawTooltip(hoveredReceipt);
-  }
-
   pop();
 
+  // ★ 선택된 영수증 디테일 패널
+  drawDetailPanel();
+
+  // UI 텍스트
   drawUI();
 }
 
@@ -550,8 +523,6 @@ function drawOverview() {
 function drawRegionFocus() {
   if (!focusedRegion) return;
 
-  const regionCircles = circles.filter(c => c.region === focusedRegion);
-
   noStroke();
   for (let c of circles) {
     if (c.region !== focusedRegion) {
@@ -560,7 +531,6 @@ function drawRegionFocus() {
       continue;
     }
 
-    // region 단계에서는 category 강조 없이 동일하게
     fill(254, 251, 247, 200);
     ellipse(c.x, c.y, c.radius * 2.1);
   }
@@ -568,7 +538,7 @@ function drawRegionFocus() {
 
 
 //------------------------------------------------------
-// CITY FOCUS (city + city 내 category)
+// CITY FOCUS (city)
 //------------------------------------------------------
 function drawCityFocus() {
   if (!focusedRegion || !focusedCity) return;
@@ -576,11 +546,6 @@ function drawCityFocus() {
   const cityCircles = circles.filter(
     c => c.region === focusedRegion && c.city === focusedCity
   );
-
-  if (focusedCategory) {
-    const cat = cityCircles.filter(c => c.category === focusedCategory);
-    drawConnections(cat);
-  }
 
   noStroke();
   for (let c of circles) {
@@ -591,18 +556,98 @@ function drawCityFocus() {
       continue;
     }
 
-    // 같은 city 내부
-    if (focusedCategory && c.category === focusedCategory) {
-      const col = categoryColors[c.category] || categoryColors.Other;
-      fill(col[0], col[1], col[2], 230);
-    } else if (focusedCategory) {
-      fill(254, 251, 247, 70);
-    } else {
-      fill(254, 251, 247, 200);
-    }
-
+    // 같은 city 내부는 동일한 스타일
+    fill(254, 251, 247, 200);
     ellipse(c.x, c.y, c.radius * 2.1);
   }
+}
+
+
+//------------------------------------------------------
+// DETAIL PANEL (선택된 영수증)
+//------------------------------------------------------
+function drawDetailPanel() {
+  if (!selectedReceipt) return;
+
+  const pad = 16;
+  const panelW = min(width - 40, 720);
+  const panelH = min(height - 80, 260);
+  const x0 = 20;
+  const y0 = height - panelH - 20;  // 화면 아래쪽에 붙이기
+  const corner = 10;
+
+  // 패널 배경
+  noStroke();
+  fill(20, 210); // 약간 어두운 반투명
+  rect(x0, y0, panelW, panelH, corner);
+
+  // 좌우 영역 나누기 (왼쪽: 이미지, 오른쪽: 텍스트)
+  const midX = x0 + panelW * 0.45;
+
+  // --- 왼쪽: 이미지 ---
+  const key = selectedReceipt.filename || selectedReceipt.id;
+  let holder = key ? receiptImages[key] : null;
+
+  // 이미지 상태에 따라 텍스트
+  fill(240);
+  textAlign(CENTER, CENTER);
+  textSize(12);
+
+  const imgBoxX = x0 + pad;
+  const imgBoxY = y0 + pad;
+  const imgBoxW = panelW * 0.45 - pad * 2;
+  const imgBoxH = panelH - pad * 2;
+
+  if (!holder) {
+    text("Double-clicked receipt image\nwill load here.", 
+         imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2);
+  } else if (holder.loading) {
+    text("Loading image...", 
+         imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2);
+  } else if (holder.error || !holder.img) {
+    text("Failed to load image.", 
+         imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2);
+  } else {
+    // 이미지 그리기 (비율 유지해서 fit)
+    imageMode(CENTER);
+    const img = holder.img;
+    const imgRatio = img.width / img.height;
+    let w = imgBoxW;
+    let h = w / imgRatio;
+    if (h > imgBoxH) {
+      h = imgBoxH;
+      w = h * imgRatio;
+    }
+    image(img, imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2, w, h);
+  }
+
+  // --- 오른쪽: 텍스트 정보 ---
+  textAlign(LEFT, TOP);
+  textSize(13);
+
+  const tx = midX + pad;
+  const ty = y0 + pad;
+
+  let lines = [];
+  lines.push(`ID: ${selectedReceipt.id}`);
+  lines.push(`Region: ${selectedReceipt.region}`);
+  lines.push(`City: ${selectedReceipt.city}`);
+  lines.push(`Category: ${selectedReceipt.category}`);
+  lines.push(`Price: ¥${selectedReceipt.price}`);
+  if (selectedReceipt.filename) {
+    lines.push(`File: ${selectedReceipt.filename}`);
+  }
+
+  let yy = ty;
+  for (let s of lines) {
+    text(s, tx, yy);
+    yy += 18;
+  }
+
+  textSize(11);
+  fill(200);
+  text("Tip: Double-click another circle to switch.\nDouble-click empty space to close.",
+       tx, y0 + panelH - pad - 32);
 }
 
 
@@ -616,19 +661,31 @@ function drawUI() {
   textAlign(LEFT, TOP);
   textSize(20);
 
-  // 기본 monoFont 사용 (textFont 호출 없음)
   text("Japan Receipts Map", 20, 20);
 
   textSize(13);
 
   if (currentMode === "overview") {
-    text("Hover: region connections\nClick: zoom into region", 20, 48);
+    text(
+      "Hover: see region constellation\n" +
+      "Click circle: zoom into region\n" +
+      "Double-click circle: show receipt detail",
+      20, 48
+    );
   } else if (currentMode === "region") {
-    text("Click circle: zoom into city\nClick empty: back to overview", 20, 48);
+    text(
+      "Click circle: zoom into city\n" +
+      "Click empty: back to overview\n" +
+      "Double-click circle: show receipt detail",
+      20, 48
+    );
   } else if (currentMode === "city") {
-    text("Click circle: category constellation (within city)\nClick empty: back to region", 20, 48);
-  } else if (currentMode === "category") {
-    text("Click empty: back to city\nClick another city circle: jump", 20, 48);
+    text(
+      "Click another city circle: jump\n" +
+      "Click empty: back to region\n" +
+      "Double-click circle: show receipt detail",
+      20, 48
+    );
   }
 }
 
@@ -653,6 +710,9 @@ function getHoverCircleIndex() {
 function mousePressed() {
   const idx = getHoverCircleIndex();
 
+  // 빈 곳 더블클릭해서 패널 닫을 수 있게 하기 위해
+  // mousePressed에서는 selectedReceipt를 건드리지 않음
+
   // -----------------------------
   // OVERVIEW
   // -----------------------------
@@ -661,7 +721,6 @@ function mousePressed() {
       const clicked = circles[idx];
       focusedRegion = clicked.region;
       focusedCity = null;
-      focusedCategory = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
     }
@@ -677,7 +736,6 @@ function mousePressed() {
       currentMode = "overview";
       focusedRegion = null;
       focusedCity = null;
-      focusedCategory = null;
       resetView();
       regionFade = 0;
       regionFadeTarget = 0;
@@ -690,7 +748,6 @@ function mousePressed() {
       // 다른 region 클릭 → 그 region으로 점프
       focusedRegion = clicked.region;
       focusedCity = null;
-      focusedCategory = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
       return;
@@ -699,7 +756,6 @@ function mousePressed() {
     // 같은 region → city 확대
     focusedRegion = clicked.region;
     focusedCity = clicked.city;
-    focusedCategory = null;
     currentMode = "city";
     zoomToCity(focusedRegion, focusedCity);
     return;
@@ -712,57 +768,8 @@ function mousePressed() {
     if (idx === -1) {
       // 빈 공간: region으로
       focusedCity = null;
-      focusedCategory = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
-      return;
-    }
-
-    const clicked = circles[idx];
-
-    if (clicked.region !== focusedRegion) {
-      // 다른 region 클릭 → 그 region으로
-      focusedRegion = clicked.region;
-      focusedCity = null;
-      focusedCategory = null;
-      currentMode = "region";
-      zoomToRegion(focusedRegion);
-      return;
-    }
-
-    if (clicked.city !== focusedCity) {
-      // 같은 region 내 다른 city로 점프
-      focusedCity = clicked.city;
-      focusedCategory = null;
-      currentMode = "city";
-      zoomToCity(focusedRegion, focusedCity);
-      return;
-    }
-
-    // 같은 city 내부 → category 포커스 토글
-    if (!focusedCategory) {
-      focusedCategory = clicked.category;
-      currentMode = "category";
-    } else {
-      if (focusedCategory === clicked.category) {
-        focusedCategory = null;
-        currentMode = "city";
-      } else {
-        focusedCategory = clicked.category;
-        currentMode = "category";
-      }
-    }
-    return;
-  }
-
-  // -----------------------------
-  // CATEGORY MODE (city 내부)
-  // -----------------------------
-  if (currentMode === "category") {
-    if (idx === -1) {
-      // 빈 공간: 다시 city view
-      currentMode = "city";
-      focusedCategory = null;
       return;
     }
 
@@ -772,7 +779,6 @@ function mousePressed() {
       // 다른 region으로 점프
       focusedRegion = clicked.region;
       focusedCity = null;
-      focusedCategory = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
       return;
@@ -781,22 +787,49 @@ function mousePressed() {
     if (clicked.city !== focusedCity) {
       // 같은 region 내 다른 city로 점프
       focusedCity = clicked.city;
-      focusedCategory = null;
       currentMode = "city";
       zoomToCity(focusedRegion, focusedCity);
       return;
     }
 
-    // 같은 city → category 토글
-    if (focusedCategory === clicked.category) {
-      focusedCategory = null;
-      currentMode = "city";
-    } else {
-      focusedCategory = clicked.category;
-      currentMode = "category";
-    }
+    // 같은 city를 클릭해도 현재는 추가 동작 없음
     return;
   }
+}
+
+// ★ 더블클릭: 영수증 디테일 패널 열기/닫기
+function doubleClicked() {
+  const idx = getHoverCircleIndex();
+
+  if (idx === -1) {
+    // 빈 공간 더블클릭 → 패널 닫기
+    selectedReceipt = null;
+    return false;
+  }
+
+  const r = circles[idx];
+  selectedReceipt = r;
+
+  const key = r.filename || r.id;
+  if (key && !receiptImages[key]) {
+    // 이미지 로딩 시작
+    receiptImages[key] = { loading: true, img: null, error: false };
+    const path = `assets/receipts/${r.filename}`;
+
+    loadImage(
+      path,
+      (img) => {
+        receiptImages[key] = { loading: false, img, error: false };
+      },
+      (err) => {
+        console.error("Failed to load receipt image:", path);
+        receiptImages[key] = { loading: false, img: null, error: true };
+      }
+    );
+  }
+
+  // 브라우저에서 기본 더블클릭 동작 막기
+  return false;
 }
 
 function windowResized() {
@@ -804,6 +837,7 @@ function windowResized() {
   prepareRegionRects(); 
   resetView();
 }
+
 
 //------------------------------------------------------
 // 전체 일본 영역 bounding box
@@ -830,8 +864,10 @@ function getJapanBounds() {
   };
 }
 
+
 //------------------------------------------------------
-// 섬+지역+분류+가격 마우스 hover
+// (예전 버전에서 쓰던) 섬+지역+분류+가격 마우스 hover 그리기
+// 지금은 사용 안 함, hover 제거
 //------------------------------------------------------
 function drawReceiptsInCity(area, receipts) {
   for (let r of receipts) {
@@ -839,58 +875,8 @@ function drawReceiptsInCity(area, receipts) {
     let y = r.y;
     let rad = r.radius;
 
-    fill(r.color);
+    fill(254, 251, 247, 200);
     noStroke();
     ellipse(x, y, rad * 2);
-
-    if (dist(mouseX, mouseY, x, y) < rad) {
-      hoveredReceipt = r;   // r 전체 오브젝트를 기억
-    }
   }
 }
-
-//------------------------------------------------------
-// 섬+지역+분류+가격 text draw
-//------------------------------------------------------
-function drawTooltip(r) {
-  const pad = 10;
-  const lineH = 18;
-  const corner = 6;
-
-  let msg1 = `${r.region} ${r.city}`;
-  let msg2 = `${r.category}  ¥${r.price}`;
-  
-  const lines = [msg1, msg2];
-
-  // 폭 계산
-  let w = 0;
-  for (let t of lines) {
-    w = max(w, textWidth(t));
-  }
-  w += pad * 2;
-  const h = lineH * lines.length + pad * 2;
-
-  let tx = mouseX + 15;
-  let ty = mouseY - h - 10;
-
-  // 화면 바깥 방지
-  if (tx + w > width) tx = mouseX - w - 15;
-  if (ty < 0) ty = mouseY + 20;
-
-  // Box
-  noStroke();
-  fill(0, 200);       // 반투명 검정
-  rect(tx, ty, w, h, corner);
-
-  // Text
-  fill(255);
-  textSize(13);
-  textAlign(LEFT, TOP);
-
-  let yy = ty + pad;
-  for (let t of lines) {
-    text(t, tx + pad, yy);
-    yy += lineH;
-  }
-}
-  
