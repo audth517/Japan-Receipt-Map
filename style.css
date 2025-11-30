@@ -45,8 +45,8 @@ body {
 --------------------------------------------------- */
 #title {
    text-align: center;
-   font-size: 20px;
-   margin-bottom: 5px;
+   font-size: 22px;
+   margin-bottom: 4px;
    color: rgb(55, 52, 49);
    font-weight: normal;
 }
@@ -70,12 +70,12 @@ body {
    background-image: repeating-linear-gradient(
       to right,
       rgb(55, 52, 49) 0,
-      rgb(55, 52, 49) 15px,
-      transparent 15px,
+      rgb(55, 52, 49) 10px,
+      transparent 10px,
       transparent 19px
    );
 
-   margin-top: 0px;
+   margin-top: 5px;
    margin-bottom: 20px;
 }
 
