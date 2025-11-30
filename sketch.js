@@ -886,7 +886,7 @@ function drawReceiptsInCity(area, receipts) {
 
     fill(55, 52, 49, 200);
     noStroke();
-    ellipse(x, y, rad * 2);
+    rect(x, y, rad * 2, rad * 2);
   }
 }
 
