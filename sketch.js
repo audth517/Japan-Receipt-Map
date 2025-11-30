@@ -91,7 +91,7 @@ let regionRectsPx = {};
 let titleFont;
 
 function preload() {
-  monoFont = loadFont("assets/fonts/DepartureMono-Regular.woff");
+  monoFont = loadFont("assets/fonts/AnonymiceProNerdFontMono-Bold.woff");
   titleFont = monoFont;
   
   for (let region of REGION_NAMES) {
