@@ -480,7 +480,9 @@ function drawConnections(circleList) {
   pts.sort((a, b) => a.ang - b.ang);
 
   const alpha = 80 + 40 * sin(frameCount * 0.06);
-  stroke(230, 220, 250, alpha);
+  let cat = circleList[0].category;
+  let baseCol = getCategoryStrokeColor(cat);
+  stroke(red(baseCol), green(baseCol), blue(baseCol), alpha);
   strokeWeight(0.7);
   noFill();
 
@@ -569,9 +571,9 @@ function drawCityFocus() {
   noStroke();
   for (let c of circles) {
     if (c.region === focusedRegion && c.city === focusedCity) {
-      fill(254, 251, 247, 230);
+      fill(55, 52, 49, 230);
     } else {
-      fill(254, 251, 247, 30);
+      fill(55, 52, 49, 30);
     }
     ellipse(c.x, c.y, c.radius * 2.0);
   }
@@ -891,5 +893,19 @@ function drawReceiptsInCity(area, receipts) {
     fill(55, 52, 49, 200);
     noStroke();
     ellipse(x, y, rad * 2);
+  }
+}
+
+//------------------------------------------------------
+// 카테고리 stroke 색 설정
+//------------------------------------------------------
+function getCategoryStrokeColor(cat) {
+  switch (cat) {
+    case "TP": return color(202, 82, 57);  // Transportation
+    case "CS": return color(221, 140, 63);  // Convenience Store
+    case "RC": return color(243, 197, 70);  // Restaurant & Cafe
+    case "TR": return color(159, 161, 72);  // Tourism
+    case "GS": return color(84, 137, 74);  // Goods Shop
+    default:   return color(180);            // Other
   }
 }
