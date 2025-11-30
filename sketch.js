@@ -502,7 +502,9 @@ function drawOverview() {
 
   if (hoverRegion) {
     const regionCircles = circles.filter(c => c.region === hoverRegion);
-    drawConnections(regionCircles);
+    const hovered = circles[idx];
+    const sameCat = regionCircles.filter(c => c.category === hovered.category);
+    drawConnections(sameCat);
   }
 
   noStroke();
@@ -523,18 +525,17 @@ function drawOverview() {
 function drawRegionFocus() {
   if (!focusedRegion) return;
 
-  noStroke();
-  for (let c of circles) {
-    if (c.region !== focusedRegion) {
-      fill(254, 251, 247, 20);
-      ellipse(c.x, c.y, c.radius * 1.6);
-      continue;
+  // ★ hover된 원의 category 이어주기
+  const idx = getHoverCircleIndex();
+  if (idx !== -1) {
+    const hovered = circles[idx];
+    if (hovered.region === focusedRegion) {
+      const sameCat = circles.filter(
+        c => c.region === focusedRegion && c.category === hovered.category
+      );
+      drawConnections(sameCat);
     }
-
-    fill(254, 251, 247, 200);
-    ellipse(c.x, c.y, c.radius * 2.1);
   }
-}
 
 
 //------------------------------------------------------
@@ -543,22 +544,18 @@ function drawRegionFocus() {
 function drawCityFocus() {
   if (!focusedRegion || !focusedCity) return;
 
-  const cityCircles = circles.filter(
-    c => c.region === focusedRegion && c.city === focusedCity
-  );
-
-  noStroke();
-  for (let c of circles) {
-    // 다른 region/city는 희미하게
-    if (c.region !== focusedRegion || c.city !== focusedCity) {
-      fill(254, 251, 247, 15);
-      ellipse(c.x, c.y, c.radius * 1.4);
-      continue;
+  const idx = getHoverCircleIndex();
+  if (idx !== -1) {
+    const hovered = circles[idx];
+    if (hovered.region === focusedRegion && hovered.city === focusedCity) {
+      const sameCat = circles.filter(
+        c =>
+          c.region === focusedRegion &&
+          c.city === focusedCity &&
+          c.category === hovered.category
+      );
+      drawConnections(sameCat);
     }
-
-    // 같은 city 내부는 동일한 스타일
-    fill(254, 251, 247, 200);
-    ellipse(c.x, c.y, c.radius * 2.1);
   }
 }
 
@@ -709,9 +706,7 @@ function getHoverCircleIndex() {
 //------------------------------------------------------
 function mousePressed() {
   const idx = getHoverCircleIndex();
-
-  // 빈 곳 더블클릭해서 패널 닫을 수 있게 하기 위해
-  // mousePressed에서는 selectedReceipt를 건드리지 않음
+  if (idx === -1) selectedReceipt = null;
 
   // -----------------------------
   // OVERVIEW
