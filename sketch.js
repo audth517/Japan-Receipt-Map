@@ -72,8 +72,8 @@ let regionRectsPct_raw = {
 let regionRectsPx = {};
 
 let SIZE_SCALE_OVERVIEW = 1.0;  // whole map
-let SIZE_SCALE_REGION   = 0.45; // island (절반 이하)
-let SIZE_SCALE_CITY     = 0.9;  // city (조금 크게 또는 동일)
+let SIZE_SCALE_REGION   = 1; // island (절반 이하)
+let SIZE_SCALE_CITY     = 0.45;  // city (조금 크게 또는 동일)
 
 //------------------------------------------------------
 // PRELOAD
