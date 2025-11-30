@@ -55,7 +55,7 @@ body {
    text-align: center;
    font-size: 15px;
    margin-top: 0;
-   margin-bottom: 15px;
+   margin-bottom: 10px;
    color: rgb(55, 52, 49);
    font-weight: normal;
 }
@@ -75,7 +75,7 @@ body {
       transparent 19px
    );
 
-   margin-top: 20px;
+   margin-top: 0px;
    margin-bottom: 20px;
 }
 
