@@ -19,6 +19,9 @@ const CATEGORY_COLORS = {
   "GS": [180, 230, 180],   // Goods Shop
 };
 
+let TEXT_COL = [55, 52, 49];
+let BG_COL = [251, 251, 250];
+
 let japanAspect = 1000 / 1328; // 일본 전체의 가로/세로 비율
 let worldScale = 1;
 let worldOffsetX = 0;
@@ -120,30 +123,20 @@ function preload() {
 // SETUP
 //------------------------------------------------------
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-  textFont(monoFont);
-  pixelDensity(2);     // anti-alias for circles
+  let holder = document.getElementById("canvas-holder");
+  let canvas = createCanvas(1000, 1200);
+  canvas.parent(holder);
 
-  bgCol = color("rgb(35, 35, 34)");
+  textFont("ReceiptMono");
 
-  smooth();
-  drawingContext.imageSmoothingEnabled = true;
-
-  prepareRegionRects();
-  prepareCityMasks();
-  resetView();
-
-  if (!jsonLoaded) {
-    noLoop();
-    let timer = setInterval(() => {
-      if (jsonLoaded) {
-        clearInterval(timer);
-        processData();
-        loop();
-      }
-    }, 30);
-  } else {
-    processData();
+  // ===== Create category colored lines =====
+  const block = document.getElementById("category-lines");
+  for (let k in CATEGORY_COLORS) {
+    let div = document.createElement("div");
+    div.style.width = "80px";
+    div.style.height = "4px";
+    div.style.background = `rgb(${CATEGORY_COLORS[k][0]},${CATEGORY_COLORS[k][1]},${CATEGORY_COLORS[k][2]})`;
+    block.appendChild(div);
   }
 }
 
@@ -211,9 +204,9 @@ function prepareCityMasks() {
 
           if (
             a > 0 &&
-            Math.abs(r - 44) < 10 &&
-            Math.abs(g - 44) < 10 &&
-            Math.abs(b - 42) < 10
+            Math.abs(r - 219) < 10 &&
+            Math.abs(g - 218) < 10 &&
+            Math.abs(b - 217) < 10
           ) {
             if (x > safeMinX && x < safeMaxX &&
                 y > safeMinY && y < safeMaxY) {
@@ -420,6 +413,7 @@ function screenToWorld(mx, my) {
 //------------------------------------------------------
 function draw() {
   background(bgCol);
+  background(BG_COL);
   updateView();
 
   push();
@@ -895,10 +889,19 @@ function drawReceiptsInCity(area, receipts) {
   for (let r of receipts) {
     let x = r.x;
     let y = r.y;
-    let rad = r.radius;
 
-    fill(254, 251, 247, 200);
+    let side = r.size;  // 기존 radius 기반 → side length
+
+    fill(r.color);
     noStroke();
-    ellipse(x, y, rad * 2);
+    rectMode(CENTER);
+    square(x, y, side);
+
+    if (mouseX > x - side/2 &&
+        mouseX < x + side/2 &&
+        mouseY > y - side/2 &&
+        mouseY < y + side/2) {
+      hoveredReceipt = r;
+    }
   }
 }
