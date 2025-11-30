@@ -2,47 +2,90 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Japan Receipt Map</title>
+  <link rel="stylesheet" href="style.css" />
 
-  <!-- p5.js CDN -->
+  <!-- p5.js -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
 
-  <!-- 전체 스타일 -->
+  <!-- Font -->
   <style>
-    /* ===== CUSTOM FONT ===== */
     @font-face {
-      font-family: 'DepartureMono';
-      src: url('assets/fonts/DepartureMono-Regular.woff') format('woff');
-      font-weight: normal;
-      font-style: normal;
-    }
-
-    /* ===== GLOBAL LAYOUT ===== */
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-
-      background-color: rgb(35, 35, 34); /* 전체 배경 */
-      font-family: 'DepartureMono', monospace; /* ★ p5 텍스트도 자동 적용됨 */
-      color: white;
-    }
-
-    canvas {
-      display: block;
-    }
-
-    /* 제목/부제 같은 HTML 요소용 */
-    .title-font {
-      font-family: 'DepartureMono', monospace;
+      font-family: 'ReceiptMono';
+      src: url('./fonts/AnonymiceProNerdFontMono-Bold.woff') format('woff');
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
-  <!-- p5.js canvas -->
+
+  <div id="layout">
+
+    <!-- Title Section -->
+    <header id="header">
+      <h1 id="title">Japan Receipt Map</h1>
+      <h2 id="subtitle">Visualizing My Entire Trip Through Receipts</h2>
+      <div class="dash-line"></div>
+    </header>
+
+    <!-- Two-column Introduction -->
+    <section id="intro-section">
+      <div class="intro left">
+        <p>
+          This project visualizes every receipt I collected across Japan, 
+          mapping spending patterns, movement, and categories across regions.
+        </p>
+        <p>
+          Each square represents a single purchase.  
+          The size of the square reflects the price, and the color indicates a category.
+        </p>
+      </div>
+
+      <div class="intro right">
+        <p>
+          Receipts act as micro-time capsules—capturing not only what was bought, 
+          but when, where, and why. This map reconstructs my journey 
+          through the shapes, sizes, and distribution of spending.
+        </p>
+      </div>
+    </section>
+
+    <!-- HOW TO READ -->
+    <section id="how">
+      <h3>How To Read</h3>
+
+      <div id="legend">
+
+        <!-- Purchase count / Size Legend -->
+        <div class="legend-block">
+          <div class="legend-square demo1"></div>
+          <span class="legend-label">One Purchase</span>
+        </div>
+
+        <div class="legend-block">
+          <div class="legend-square demo-price"></div>
+          <span class="legend-label">
+            Price comparison:
+            ¥10,000 &nbsp; ¥1,000 &nbsp; ¥100
+          </span>
+        </div>
+
+        <!-- Category color lines -->
+        <div id="category-lines">
+          <!-- Each line will be injected via JS to use CATEGORY_COLORS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP SECTION (p5 canvas) -->
+    <section id="map-section">
+      <div id="canvas-holder"></div>
+      <div id="receipt-info"></div>
+    </section>
+
+  </div>
+
   <script src="sketch.js"></script>
 </body>
 </html>
