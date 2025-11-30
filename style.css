@@ -14,9 +14,8 @@ body {
   background: rgb(251, 251, 250);
   color: rgb(55, 52, 49);
 
-  /* 영수증 느낌: 모노스페이스 + tight spacing */
   font-family: 'ReceiptMono', monospace;
-  letter-spacing: 0.5px; /* 영수증 글자 느낌 */
+  letter-spacing: 0.5px;
 }
 
 /* ---------------------------------------------------
@@ -29,13 +28,23 @@ body {
   padding: 40px;         /* 문단 + 벽 여백 */
 }
 
+#layout {
+  width: 100%;
+  max-width: 1400px;     /* 웹 양쪽 여백 확보 */
+  margin: 0 auto;
+  padding-top: 30px;     /* 웹 최상단과 제목 사이 */
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-bottom: 30px;
+}
+
 /* ---------------------------------------------------
    Headings
 --------------------------------------------------- */
 #title {
   text-align: center;
-  font-size: 25px;
-  margin-bottom: 6px;
+  font-size: 20px;
+  margin-bottom: 5px;
   color: rgb(55, 52, 49);
 
   /* Receipt style: no bold, tighter spacing */
@@ -44,9 +53,9 @@ body {
 
 #subtitle {
   text-align: center;
-  font-size: 18px;
+  font-size: 15px;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   color: rgb(55, 52, 49);
   font-weight: normal;
 }
@@ -55,8 +64,24 @@ body {
    Dash Line
 --------------------------------------------------- */
 .dash-line {
-  border-bottom: 1px dashed rgb(55, 52, 49);
-  margin: 25px 0;
+  width: 100%;
+  height: 2px;  /* 선 굵기 = 2px */
+
+  background-image: repeating-linear-gradient(
+    to right,
+    rgb(55, 52, 49) 0,
+    rgb(55, 52, 49) 50px, /* ← 대시 하나의 길이 (기존 대비 5배 길이 설정) */
+    transparent 50px,
+    transparent 60px       /* ← 간격은 기존 패턴과 비슷하게 유지 */
+  );
+
+  /* 위아래 여백 */
+  margin-top: 25px;
+  margin-bottom: 25px;
+
+  /* layout 양쪽 padding 무효화 (full width) */
+  margin-left: -40px;
+  margin-right: -40px;
 }
 
 /* ---------------------------------------------------
