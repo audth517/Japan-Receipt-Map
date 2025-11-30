@@ -10,6 +10,15 @@ const CITIES_BY_REGION = {
   Kyushu:   ["Fukuoka", "Ukiha"]
 };
 
+// CATEGORY COLORS
+const CATEGORY_COLORS = {
+  "TP": [250, 160, 160],   // Transportation
+  "CS": [160, 200, 250],   // Convenience Store
+  "RC": [200, 160, 250],   // Restaurant & Cafe
+  "TR": [250, 200, 160],   // Tourism
+  "GS": [180, 230, 180],   // Goods Shop
+};
+
 let japanAspect = 1000 / 1328; // 일본 전체의 가로/세로 비율
 let worldScale = 1;
 let worldOffsetX = 0;
@@ -479,9 +488,11 @@ function drawConnections(circleList) {
   }));
   pts.sort((a, b) => a.ang - b.ang);
 
-  const alpha = 80 + 40 * sin(frameCount * 0.06);
-  stroke(230, 220, 250, alpha);
-  strokeWeight(0.7);
+  const alpha = 100 + 60 * sin(frameCount * 0.06);
+  let cat = circleList[0].c.category;
+  let col = CATEGORY_COLORS[cat] || [230, 220, 250];
+  stroke(col[0], col[1], col[2], alpha);
+  strokeWeight(1.0);
   noFill();
 
   beginShape();
