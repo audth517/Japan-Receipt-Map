@@ -3,64 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <title>Japan Receipt Map</title>
-  <link rel="stylesheet" href="styles.css">
+
+  <!-- p5.js -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+
+  <!-- Font -->
+  <style>
+    @font-face {
+      font-family: 'ReceiptMono';
+      src: url('assets/fonts/DepartureMono-Regular.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+  </style>
+
 </head>
 
 <body>
-  <div id="layout-container">
-    
-    <aside id="left-panel">
-      <h1>[Japan Receipt Map]</h1>
-      <p class="date">From 230201 to 250512</p>
-      <hr class="dash">
 
-      <h2>Introduction</h2>
-      <p class="column">
-        Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam
-        nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat
-        volutpat. Ut wisi enim ad minim veniam
-      </p>
-      <p class="column">
-        Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam
-        nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat
-        volutpat. Ut wisi enim ad minim veniam
-      </p>
-
-      <hr class="dash">
-
-      <h2>How To Read</h2>
-      <p>One Purchasing <span class="dot demo"></span></p>
-
-      <p>Price: ¥10,000 ¥1,000 ¥100</p>
-      <div class="price-dots">
-        <span class="dot p10"></span>
-        <span class="dot p1"></span>
-        <span class="dot p0"></span>
-      </div>
-
-      <div class="categories">
-        <p>Convenient Store <span class="dot"></span></p>
-        <p>Goods Shop <span class="dot"></span></p>
-        <p>Restaurant & Cafe <span class="dot"></span></p>
-        <p>Transportation <span class="dot"></span></p>
-        <p>Tourism <span class="dot"></span></p>
-      </div>
-
-      <hr class="dash">
-    </aside>
-
-    <main id="map-container">
-      <!-- p5 canvas attaches here -->
-    </main>
-
-  </div>
-
-  <footer>
-    <span class="left">ID221</span>
-    <span class="center">Soyoung Myeong</span>
-    <span class="right">ID221</span>
-  </footer>
+  <!-- p5 canvas attaches here -->
+  <div id="canvas-holder"></div>
 
   <script src="sketch.js"></script>
 </body>
