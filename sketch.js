@@ -570,7 +570,7 @@ function drawCityFocus() {
     } else {
       fill(55, 52, 49, 30);
     }
-    ellipse(c.x, c.y, c.radius * 2.0);
+    rect(c.x, c.y, c.radius * 2.0, c.radius * 2.0);
   }
 }
 
