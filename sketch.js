@@ -46,6 +46,7 @@ let receiptImages = {};  // filename → { loading, img, error }
 let bgCol;
 let regionBaseScale = 1;
 let monoFont;
+let focusedCategory = null;
 
 // Canvas size (참고용 상수)
 const CANVAS_W = 1000;
@@ -515,9 +516,9 @@ function drawOverview() {
 
   if (hoverRegion) {
     const regionCircles = circles.filter(c => c.region === hoverRegion);
-    const hovered = circles[idx];
-    const sameCat = regionCircles.filter(c => c.category === hovered.category);
-    drawConnections(sameCat);
+    const list = regionCircles.map(c => ({ c }));
+
+    drawConnections(list);
   }
 
   noStroke();
@@ -531,24 +532,25 @@ function drawOverview() {
   }
 }
 
-
 //------------------------------------------------------
 // REGION FOCUS (region 전체 보기)
 //------------------------------------------------------
 function drawRegionFocus() {
   if (!focusedRegion) return;
 
-  // ★ hover된 원의 category 이어주기
   const idx = getHoverCircleIndex();
   if (idx !== -1) {
     const hovered = circles[idx];
+
     if (hovered.region === focusedRegion) {
-      const sameCat = circles.filter(
-        c => c.region === focusedRegion && c.category === hovered.category
+      const sameCity = circles.filter(
+        c => c.region === focusedRegion && c.city === hovered.city
       );
-      drawConnections(sameCat);
+      const list = sameCity.map(c => ({ c }));
+      drawConnections(list);
     }
   }
+
   noStroke();
   for (let c of circles) {
     if (c.region === focusedRegion) {
@@ -567,18 +569,19 @@ function drawCityFocus() {
   if (!focusedRegion || !focusedCity) return;
 
   const idx = getHoverCircleIndex();
-  if (idx !== -1) {
-    const hovered = circles[idx];
-    if (hovered.region === focusedRegion && hovered.city === focusedCity) {
-      const sameCat = circles.filter(
-        c =>
-          c.region === focusedRegion &&
-          c.city === focusedCity &&
-          c.category === hovered.category
-      );
-      drawConnections(sameCat);
-    }
+
+  if (focusedCategory) {
+    // category 연결
+    const sameCat = circles.filter(
+      c => c.region === focusedRegion &&
+           c.city === focusedCity &&
+           c.category === focusedCategory
+    );
+    drawConnections(sameCat.map(c => ({ c })));
+  } 
+  else if (idx !== -1) {
   }
+
   noStroke();
   for (let c of circles) {
     if (c.region === focusedRegion && c.city === focusedCity) {
@@ -589,7 +592,6 @@ function drawCityFocus() {
     ellipse(c.x, c.y, c.radius * 2.0);
   }
 }
-
 
 //------------------------------------------------------
 // DETAIL PANEL (선택된 영수증)
@@ -739,9 +741,6 @@ function mousePressed() {
   const idx = getHoverCircleIndex();
   if (idx === -1) selectedReceipt = null;
 
-  // -----------------------------
-  // OVERVIEW
-  // -----------------------------
   if (currentMode === "overview") {
     if (idx !== -1) {
       const clicked = circles[idx];
@@ -753,9 +752,6 @@ function mousePressed() {
     return;
   }
 
-  // -----------------------------
-  // REGION MODE
-  // -----------------------------
   if (currentMode === "region") {
     if (idx === -1) {
       // 빈 공간: overview로
@@ -787,38 +783,33 @@ function mousePressed() {
     return;
   }
 
-  // -----------------------------
-  // CITY MODE
-  // -----------------------------
   if (currentMode === "city") {
     if (idx === -1) {
-      // 빈 공간: region으로
+      focusedCategory = null;
       focusedCity = null;
       currentMode = "region";
       zoomToRegion(focusedRegion);
       return;
     }
-
+  
     const clicked = circles[idx];
-
-    if (clicked.region !== focusedRegion) {
-      // 다른 region으로 점프
-      focusedRegion = clicked.region;
-      focusedCity = null;
-      currentMode = "region";
-      zoomToRegion(focusedRegion);
-      return;
-    }
-
+  
     if (clicked.city !== focusedCity) {
-      // 같은 region 내 다른 city로 점프
+      // 다른 city로 이동
       focusedCity = clicked.city;
+      focusedCategory = null;
       currentMode = "city";
       zoomToCity(focusedRegion, focusedCity);
       return;
     }
-
-    // 같은 city를 클릭해도 현재는 추가 동작 없음
+  
+    // ★ 같은 city 클릭 = category constellation 토글
+    if (focusedCategory === clicked.category) {
+      focusedCategory = null;
+    } else {
+      focusedCategory = clicked.category;
+    }
+  
     return;
   }
 }
