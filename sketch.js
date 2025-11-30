@@ -510,9 +510,9 @@ function drawOverview() {
   noStroke();
   for (let c of circles) {
     if (hoverRegion && c.region === hoverRegion)
-      fill(254, 251, 247, 230);
+      fill(55, 52, 49, 220);
     else
-      fill(254, 251, 247, 130);
+      fill(55, 52, 49, 90);
 
     ellipse(c.x, c.y, c.radius * 2.0);
   }
@@ -539,9 +539,9 @@ function drawRegionFocus() {
   noStroke();
   for (let c of circles) {
     if (c.region === focusedRegion) {
-      fill(254, 251, 247, 230);
+      fill(55, 52, 49, 220);
     } else {
-      fill(254, 251, 247, 40);
+      fill(55, 52, 49, 30);
     }
     ellipse(c.x, c.y, c.radius * 2.0);
   }
@@ -670,7 +670,7 @@ function drawDetailPanel() {
 // UI TEXT
 //------------------------------------------------------
 function drawUI() {
-  fill(254, 251, 247);
+  fill(55, 52, 49);
   noStroke();
 
   textAlign(LEFT, TOP);
@@ -888,7 +888,7 @@ function drawReceiptsInCity(area, receipts) {
     let y = r.y;
     let rad = r.radius;
 
-    fill(254, 251, 247, 200);
+    fill(55, 52, 49, 200);
     noStroke();
     ellipse(x, y, rad * 2);
   }
