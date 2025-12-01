@@ -36,63 +36,72 @@
     <!-- INTRO SECTION -->
     <div id="intro-section">
       <p class="intro">
-        Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. 
-        Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+        Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor.
       </p>
       <p class="intro">
-        In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium.
-        Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi.
+        In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Integer tincidunt.
       </p>
     </div>
 
     <!-- DASH 2 -->
     <div class="dash-line"></div>
 
-    <!-- 2-COLUMN LAYOUT -->
+    <!-- LEFT HOW TO READ + RIGHT MAP -->
     <div id="content-row">
 
-      <!-- LEFT: HOW TO READ -->
+      <!-- LEFT HOW TO READ -->
       <div id="howto-section">
 
         <div id="howto-title">How To Read</div>
 
-        <div class="how-block indent1 row">
+        <!-- ONE PURCHASE -->
+        <div class="row indent1 how-block">
           <div class="label">One Purchase</div>
-        
+
           <div class="vis-group">
             <div id="ht-one" class="sq"></div>
             <div class="sq small-sq"></div>
           </div>
         </div>
 
-        <div class="how-block indent1">
+        <!-- PRICE -->
+        <div class="row indent1 how-block">
           <div class="label">Price</div>
         </div>
 
         <div class="how-price indent2">
-          <div class="row"><span>¥10,000</span><div class="sq" id="ht-10000"></div></div>
-          <div class="row"><span>¥1,000</span><div class="sq" id="ht-1000"></div></div>
-          <div class="row"><span>¥100</span><div class="sq" id="ht-100"></div></div>
+          <div class="row">
+            <span>¥10,000</span>
+            <div class="vis-group">
+              <div class="sq" id="ht-10000"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <span>¥1,000</span>
+            <div class="vis-group">
+              <div class="sq" id="ht-1000"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <span>¥100</span>
+            <div class="vis-group">
+              <div class="sq" id="ht-100"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="how-block indent1">
+        <!-- CATEGORY -->
+        <div class="row indent1 how-block">
           <div class="label">Category</div>
         </div>
 
         <div class="how-cat indent2">
 
           <div class="row">
-            <span>Tourism</span>
-            <div class="cat-vis">
-              <div class="sq"></div>
-              <div class="line" id="cat-TR"></div>
-              <div class="sq"></div>
-            </div>
-          </div>
-          
-          <div class="row">
             <span>Convenient Store</span>
-            <div class="cat-vis">
+            <div class="vis-group">
               <div class="sq"></div>
               <div class="line" id="cat-CS"></div>
               <div class="sq"></div>
@@ -100,8 +109,17 @@
           </div>
 
           <div class="row">
+            <span>Goods Shop</span>
+            <div class="vis-group">
+              <div class="sq"></div>
+              <div class="line" id="cat-GS"></div>
+              <div class="sq"></div>
+            </div>
+          </div>
+
+          <div class="row">
             <span>Restaurant & Café</span>
-            <div class="cat-vis">
+            <div class="vis-group">
               <div class="sq"></div>
               <div class="line" id="cat-RC"></div>
               <div class="sq"></div>
@@ -110,28 +128,26 @@
 
           <div class="row">
             <span>Transportation</span>
-            <div class="cat-vis">
+            <div class="vis-group">
               <div class="sq"></div>
               <div class="line" id="cat-TP"></div>
               <div class="sq"></div>
             </div>
-          </div>
 
           <div class="row">
-            <span>Goods Shop</span>
-            <div class="cat-vis">
+            <span>Tourism</span>
+            <div class="vis-group">
               <div class="sq"></div>
-              <div class="line" id="cat-GS"></div>
+              <div class="line" id="cat-TR"></div>
               <div class="sq"></div>
             </div>
           </div>
-
+          </div>
         </div>
       </div>
 
-      <!-- RIGHT: CANVAS -->
+      <!-- RIGHT MAP -->
       <div id="canvas-holder"></div>
-
     </div>
   </div>
 
