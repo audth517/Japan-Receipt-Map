@@ -10,6 +10,9 @@ const CITIES_BY_REGION = {
   Kyushu:   ["Fukuoka", "Ukiha"]
 };
 
+const JAPAN_W = 1000;   // 가상 일본 전체 width
+const JAPAN_H = 1328;
+
 let japanAspect = 1000 / 1328; // 일본 전체의 가로/세로 비율
 let worldScale = 1;
 let worldOffsetX = 0;
