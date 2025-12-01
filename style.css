@@ -128,8 +128,8 @@ body {
    How To Read
 --------------------------------------------------- */
 #howto-section {
-  margin-top: 25px;
-  margin-bottom: 25px;
+  margin-top: 5px;
+  margin-bottom: 20px;
   color: rgb(55, 52, 49);
 }
 
@@ -152,7 +152,7 @@ body {
 .how-cat .row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   margin: 6px 0;
 }
 
