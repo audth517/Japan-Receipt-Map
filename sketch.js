@@ -116,28 +116,28 @@ function setup() {
   // 1) 캔버스를 넣을 div 가져오기
   const holder = document.getElementById("canvas-holder");
 
-  // 2) div의 실제 현재 크기 사용 (비율 고정 없음)
+  // 2) div의 실제 현재 크기 사용
   const w = holder.clientWidth;
   const h = holder.clientHeight;
 
-  // 3) 반응형 캔버스 생성 + 부모 div에 attach
+  // 3) 반응형 캔버스 생성
   let canvas = createCanvas(w, h);
   canvas.parent("canvas-holder");
 
+  // 기본 설정
   textFont(monoFont);
   pixelDensity(2);
   rectMode(CENTER);
-
   bgCol = color("rgb(251, 251, 250)");
-
   smooth();
   drawingContext.imageSmoothingEnabled = true;
 
-  // 레이아웃용 계산들 (장소/지역 배치, 초기 카메라 세팅)
-  prepareRegionRects();
-  prepareCityMasks();
-  resetView();
+  // 모든 준비가 끝난 뒤에 한 번씩만 호출한다
+  prepareRegionRects();   // 섬 위치 계산
+  prepareCityMasks();     // 도시 마스크 계산 (regionRect 기반)
+  resetView();            // 초기 카메라 세팅 (regionRect 기반)
 
+  // JSON 로딩 처리
   if (!jsonLoaded) {
     noLoop();
     let timer = setInterval(() => {
@@ -157,21 +157,27 @@ function setup() {
 // REGION RECT CALC (SHIFT + SCALE)
 //------------------------------------------------------
 function prepareRegionRects() {
-  const base = min(width, height);
+  const w = width;   // canvas width
+  const h = height;  // canvas height
 
-  const offsetX = (width  - base) / 2;
-  const offsetY = (height - base) / 2;
+  // 일본 전체 비율 유지용 스케일
+  const scale = min(w / JAPAN_W, h / JAPAN_H);
+
+  // canvas 정중앙 기준 offset
+  const offsetX = (w - JAPAN_W * scale) / 2;
+  const offsetY = (h - JAPAN_H * scale) / 2;
 
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
     if (!P) continue;
 
-    const x = offsetX + base * (P.x / 100);
-    const y = offsetY + base * (P.y / 100);
-    const w = base * (P.w / 100);
-    const h = base * (P.h / 100);
+    // 섬 원본 데이터 퍼센트 → 일본 전체 크기 비율 → canvas 위치 변환
+    const x = offsetX + (JAPAN_W * scale) * (P.x / 100);
+    const y = offsetY + (JAPAN_H * scale) * (P.y / 100);
+    const rectW = (JAPAN_W * scale) * (P.w / 100);
+    const rectH = (JAPAN_H * scale) * (P.h / 100);
 
-    regionRectsPx[region] = { x, y, w, h };
+    regionRectsPx[region] = { x, y, w: rectW, h: rectH };
   }
 }
 
@@ -856,7 +862,7 @@ function windowResized() {
   const h = holder.clientHeight;
 
   resizeCanvas(w, h);
-  prepareRegionRects();
+  prepareRegionRects();  // 섬의 bounding box 재계산
   resetView();
 }
 
