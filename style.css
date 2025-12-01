@@ -88,7 +88,7 @@ body {
 
 .intro {
    flex: 1;                 /* 1:1 비율로 자동 조정 */
-   font-size: 15px;
+   font-size: 13px;
    line-height: 1.5;
    text-align: left;
    margin: 0;               /* 절대 여백 제거 */
