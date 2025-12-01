@@ -945,12 +945,10 @@ function updateHowToSquares() {
   }
 
   // one purchase = just 1 receipt with price = 1? 
-  const oneRad = priceToRadius(minPrice) * SIZE_SCALE_OVERVIEW;
-  const oneSize = oneRad * 2;
   let oneEl = document.getElementById("ht-one");
   if (oneEl) {
-    oneEl.style.width = oneSize + "px";
-    oneEl.style.height = oneSize + "px";
+    oneEl.style.width = "12px";   // 원하는 기본 크기
+    oneEl.style.height = "12px";
     oneEl.style.background = "rgb(55,52,49)";
   }
 }
