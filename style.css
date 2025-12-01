@@ -17,9 +17,8 @@ body {
    font-family: 'ReceiptMono', monospace;
    letter-spacing: 0.5px;
 
-   /* 스크롤 절대 안 생기도록 */
    overflow: hidden;
-   height: 100vh;       /* 브라우저 높이 딱 맞음 */
+   height: 100vh;
    box-sizing: border-box;
 }
 
@@ -33,8 +32,7 @@ body {
 
    padding: 20px 30px;
    box-sizing: border-box;
-   height: 100%;
-   /* 전체 사이트 높이 중 header 영역만 차지 */
+
    display: flex;
    flex-direction: column;
    height: 100%;
@@ -80,16 +78,35 @@ body {
 }
 
 /* ---------------------------------------------------
+   4-4. Introduction Layout
+--------------------------------------------------- */
+#intro-section {
+   display: flex;
+   gap: 40px;               /* 두 문단 사이 여백 → 절대값 유지 */
+   margin-bottom: 20px;     /* 아래 dash-line과 간격 */
+}
+
+.intro {
+   flex: 1;                 /* 1:1 비율로 자동 조정 */
+   font-size: 15px;
+   line-height: 1.5;
+   text-align: left;
+   margin: 0;               /* 절대 여백 제거 */
+   color: rgb(55, 52, 49);
+}
+
+/* ---------------------------------------------------
    Canvas Holder
 --------------------------------------------------- */
 #canvas-holder {
-   flex: 1;                  /* layout 안에서 남은 공간 모두 차지 */
+   flex: 1;
    width: 100%;
    height: 100%;
+
    display: flex;
    justify-content: center;
    align-items: center;
 
-   overflow: hidden;         /* 캔버스는 튀어나오지 않음 */
+   overflow: hidden;
    position: relative;
 }
