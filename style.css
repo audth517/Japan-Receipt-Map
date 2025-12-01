@@ -159,7 +159,8 @@ body {
 .vis-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  height: 20px;   /* 텍스트 줄 높이와 정확히 맞춤 */
+  gap: 4px;       /* 일반 그래픽 줄은 4px 유지 */
 }
 
 .spacer {
