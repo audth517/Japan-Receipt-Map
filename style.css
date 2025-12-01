@@ -185,6 +185,20 @@ body {
   height: 10px;
 }
 
+/* 공통 row layout */
+.row {
+  display: flex;
+  align-items: center;
+}
+
+/* 텍스트 오른쪽에 오는 그래픽 묶음 */
+.vis-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;         /* 네모-선-네모 사이 간격 */
+  margin-left: 12px; /* 텍스트와 그래픽 덩어리 사이 간격 */
+}
+
 /* Scrollbar hidden for clean UI */
 #howto-section::-webkit-scrollbar {
    width: 0;
