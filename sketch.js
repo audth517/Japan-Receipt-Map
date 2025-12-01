@@ -912,11 +912,12 @@ function drawReceiptsInCity(area, receipts) {
 //------------------------------------------------------
 function getCategoryStrokeColor(cat) {
   switch (cat) {
-    case "TP": return color(202, 82, 57);  // Transportation
-    case "CS": return color(221, 140, 63);  // Convenience Store
+    case "CS": return color(202, 82, 57);  // Convenience Store
+    case "GS": return color(221, 140, 63);  // Goods Shop
     case "RC": return color(243, 197, 70);  // Restaurant & Cafe
-    case "TR": return color(159, 161, 72);  // Tourism
-    case "GS": return color(84, 137, 74);  // Goods Shop
+    case "TP": return color(159, 161, 72);  // Transportation
+    case "TR": return color(84, 137, 74);  // Tourism
+    
     default:   return color(180);            // Other
   }
 }
