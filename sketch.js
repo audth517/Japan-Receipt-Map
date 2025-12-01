@@ -10,9 +10,6 @@ const CITIES_BY_REGION = {
   Kyushu:   ["Fukuoka", "Ukiha"]
 };
 
-const JAPAN_W = 1000;   // 가상 일본 전체 width
-const JAPAN_H = 1328;
-
 let worldScale = 1;
 let worldOffsetX = 0;
 let worldOffsetY = 0;
@@ -159,27 +156,22 @@ function setup() {
 // REGION RECT CALC (SHIFT + SCALE)
 //------------------------------------------------------
 function prepareRegionRects() {
-  const w = width;   // canvas width
-  const h = height;  // canvas height
+  // "정사각형 base"를 기준으로 퍼센트 적용
+  const base = min(width, height);
 
-  // 일본 전체 비율 유지용 스케일
-  const scale = min(w / JAPAN_W, h / JAPAN_H);
-
-  // canvas 정중앙 기준 offset
-  const offsetX = (w - JAPAN_W * scale) / 2;
-  const offsetY = (h - JAPAN_H * scale) / 2;
+  const offsetX = (width  - base) / 2;
+  const offsetY = (height - base) / 2;
 
   for (let region of REGION_NAMES) {
     const P = regionRectsPct_raw[region];
     if (!P) continue;
 
-    // 섬 원본 데이터 퍼센트 → 일본 전체 크기 비율 → canvas 위치 변환
-    const x = offsetX + (JAPAN_W * scale) * (P.x / 100);
-    const y = offsetY + (JAPAN_H * scale) * (P.y / 100);
-    const rectW = (JAPAN_W * scale) * (P.w / 100);
-    const rectH = (JAPAN_H * scale) * (P.h / 100);
+    const x = offsetX + base * (P.x / 100);
+    const y = offsetY + base * (P.y / 100);
+    const w = base * (P.w / 100);
+    const h = base * (P.h / 100);
 
-    regionRectsPx[region] = { x, y, w: rectW, h: rectH };
+    regionRectsPx[region] = { x, y, w, h };
   }
 }
 
@@ -865,6 +857,9 @@ function windowResized() {
 
   resizeCanvas(w, h);
   prepareRegionRects();  // 섬의 bounding box 재계산
+  if (jsonLoaded && receiptsData) {
+    processData();
+  }
   resetView();
 }
 
