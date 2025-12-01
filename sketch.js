@@ -148,6 +148,8 @@ function setup() {
     }, 30);
   } else {
     processData();
+    updateHowToSquares();
+    updateCategoryLines();
   }
 }
 
@@ -916,5 +918,59 @@ function getCategoryStrokeColor(cat) {
     case "TR": return color(159, 161, 72);  // Tourism
     case "GS": return color(84, 137, 74);  // Goods Shop
     default:   return color(180);            // Other
+  }
+}
+
+//------------------------------------------------------
+// how to read에 네모
+//------------------------------------------------------
+function updateHowToSquares() {
+  const prices = [
+    { id: "ht-10000", value: 10000 },
+    { id: "ht-1000", value: 1000 },
+    { id: "ht-100", value: 100 },
+  ];
+
+  for (let p of prices) {
+    const rad = priceToRadius(p.value) * SIZE_SCALE_OVERVIEW;
+    const size = rad * 2;
+
+    let el = document.getElementById(p.id);
+    if (el) {
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      el.style.background = "rgb(55,52,49)";
+    }
+  }
+
+  // one purchase = just 1 receipt with price = 1? 
+  const oneRad = priceToRadius(minPrice) * SIZE_SCALE_OVERVIEW;
+  const oneSize = oneRad * 2;
+  let oneEl = document.getElementById("ht-one");
+  if (oneEl) {
+    oneEl.style.width = oneSize + "px";
+    oneEl.style.height = oneSize + "px";
+    oneEl.style.background = "rgb(55,52,49)";
+  }
+}
+
+//------------------------------------------------------
+// how to read에 cateogory 선
+//------------------------------------------------------
+function updateCategoryLines() {
+  const map = {
+    "cat-CS": getCategoryStrokeColor("CS"),
+    "cat-GS": getCategoryStrokeColor("GS"),
+    "cat-RC": getCategoryStrokeColor("RC"),
+    "cat-TP": getCategoryStrokeColor("TP"),
+    "cat-TR": getCategoryStrokeColor("TR")
+  };
+
+  for (let id in map) {
+    const col = map[id];
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.background = `rgb(${col.levels[0]},${col.levels[1]},${col.levels[2]})`;
+    }
   }
 }
