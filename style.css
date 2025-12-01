@@ -107,7 +107,7 @@ body {
 }
 
 /* ---------------------------------------------------
-   4-4. Introduction Layout
+   Introduction Layout
 --------------------------------------------------- */
 #intro-section {
    display: flex;
@@ -122,6 +122,57 @@ body {
    text-align: left;
    margin: 0;               /* 절대 여백 제거 */
    color: rgb(55, 52, 49);
+}
+
+/* ---------------------------------------------------
+   How To Read
+--------------------------------------------------- */
+#howto-section {
+  margin-top: 25px;
+  margin-bottom: 25px;
+  color: rgb(55, 52, 49);
+}
+
+#howto-title {
+  font-size: 16px;
+  margin-bottom: 16px;
+  font-weight: normal;
+}
+
+.label {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.how-block {
+  margin-top: 12px;
+}
+
+.how-price .row,
+.how-cat .row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 6px 0;
+}
+
+.sq {
+  background: rgb(55, 52, 49);
+}
+
+.cat-vis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cat-vis .sq {
+  width: 10px; height: 10px;
+}
+
+.cat-vis .line {
+  height: 2px;
+  flex: 1;
 }
 
 /* ---------------------------------------------------
