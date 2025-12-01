@@ -129,7 +129,7 @@ body {
 .how-grid {
   display: grid;
   grid-template-columns: auto auto;
-  column-gap: 40px;
+  column-gap: 80px;
 }
 
 .how-text {
