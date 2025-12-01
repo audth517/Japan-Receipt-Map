@@ -147,7 +147,7 @@ body {
 --------------------------------------------------- */
 .label {
    font-size: 14px;
-   margin-bottom: 6px;
+   margin-bottom: 3px;
 }
 
 .how-price .row,
@@ -155,7 +155,7 @@ body {
    font-size: 14px;
    display: flex;
    align-items: center;
-   gap: 16px;
+   gap: 24px;
    margin: 6px 0;
 }
 
@@ -178,6 +178,11 @@ body {
 .cat-vis .line {
    height: 2px;
    width: 40px;
+}
+
+.small-sq {
+  width: 10px;
+  height: 10px;
 }
 
 /* Scrollbar hidden for clean UI */
