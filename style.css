@@ -163,8 +163,9 @@ body {
   gap: 4px;       /* 일반 그래픽 줄은 4px 유지 */
 }
 
+/* 그래픽 그룹 사이 간격 */
 .spacer {
-  height: 13px;
+  height: 16px;
 }
 
 .sq {
