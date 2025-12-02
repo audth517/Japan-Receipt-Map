@@ -199,3 +199,12 @@ body {
 #howto-section::-webkit-scrollbar {
   width: 0;
 }
+
+/* ---------------------------------------------------
+   DASH LINE 3 (How to Read 아래)
+--------------------------------------------------- */
+#dashline3 {
+  width: 320px;       /* howto-section과 같게 */
+  margin: 20px 0;     /* 위아래 여백만 적용. 좌우는 자동(0) */
+  margin-left: 0;     /* 일단 왼쪽 정렬 */
+}
