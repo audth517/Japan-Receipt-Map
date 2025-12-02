@@ -191,6 +191,7 @@ body {
 #canvas-holder {
   flex: 1;
   width: 100%;
+  min-height: 500px;
   display: flex;
   justify-content: center;
   align-items: center;
